@@ -1,0 +1,1 @@
+dockerfile/industrial-edge-app-publisher.deb filter=lfs diff=lfs merge=lfs -text
