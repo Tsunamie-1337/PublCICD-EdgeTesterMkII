@@ -3,7 +3,6 @@ node {
     withEnv(['HOME=.']) {          
         docker.image('docker:24-dind').withRun(""" --privileged  """) { c ->
             
-        sh "echo 'Warte auf dind...'; sleep 10"
         sh "docker ps -a"
         sh "docker logs ${c.id}"
 
@@ -12,6 +11,7 @@ node {
                 docker.image("$DOCKER_IMAGE_CLI").inside(""" --link ${c.id}:docker --privileged -u root """) {
                     stage ('Build') {
                         sh """
+                            cd ..
                             cd app
                             docker-compose --host tcp://docker:2375 build
                             docker --host tcp://docker:2375 images
