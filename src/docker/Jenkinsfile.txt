@@ -11,7 +11,8 @@ node {
                 docker.image("$DOCKER_IMAGE_CLI").inside(""" --link ${c.id}:docker --privileged -u root """) {
                     stage ('Build') {
                         sh """
-                            cd ..
+                            pwd
+                            ls -l .
                             cd app
                             docker-compose --host tcp://docker:2375 build
                             docker --host tcp://docker:2375 images
