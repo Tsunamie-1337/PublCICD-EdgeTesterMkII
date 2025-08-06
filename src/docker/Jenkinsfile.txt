@@ -2,6 +2,12 @@ node {
     checkout scm
     withEnv(['HOME=.']) {          
         docker.image('docker:18.09-dind').withRun(""" --privileged  """) { c ->
+            
+        sh "echo 'Warte auf dind...'; sleep 10"
+        sh "docker ps -a"
+        sh "docker logs ${c.id}"
+
+            
             docker.withRegistry( '','credentials-id') {    
                 docker.image("$DOCKER_IMAGE_CLI").inside(""" --link ${c.id}:docker --privileged -u root """) {
                     stage ('Build') {
