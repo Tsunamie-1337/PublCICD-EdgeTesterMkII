@@ -1,7 +1,7 @@
 node {
     checkout scm
     withEnv(['HOME=.']) {          
-        docker.image('docker:24-dind').withRun(""" --privileged  """) { c ->
+        docker.image('docker:18.09-dind').withRun(""" --privileged  """) { c ->
             
         sh "echo 'Warte auf dind...'; sleep 10"
         sh "docker ps -a"
