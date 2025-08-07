@@ -5,28 +5,28 @@ node {
             sh "echo 'Warte auf dind...'; sleep 10"
             sh "nc -zv docker 2375 || :"
             docker.image("${env.DOCKER_IMAGE_CLI}").inside("--link ${c.id}:docker --privileged -u root") {
-                    stage ('Build') {
-                        sh """
-                            cd src/docker/app
-                            export DOCKER_HOST=tcp://docker:2375
-                            env | grep DOCKER
-                            echo "DOCKER_HOST=$DOCKER_HOST"
-                            docker-compose build
-                            docker images
-                            cd ..
-                        """
-                    }
-                    stage ('Upload') {
-                        sh """
-                            cp -RT app /app/src/workspace
-                            cd /app/src/workspace
-                            ie-app-publisher-linux de c -u http://docker:2375
-                            export IE_SKIP_CERTIFICATE=true
-                            ie-app-publisher-linux em li -u "$IEM_URL" -e $USER_NAME -p $PSWD
-                            ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
-                            ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
-                        """
-                    }  
+                stage ('Build') {
+                    sh """
+                        cd src/docker/app
+                        export DOCKER_HOST=tcp://docker:2375
+                        env | grep DOCKER
+                        echo "DOCKER_HOST=$DOCKER_HOST"
+                        docker-compose build
+                        docker images
+                        cd ..
+                    """
+                }
+                stage ('Upload') {
+                     sh """
+                        cp -RT app /app/src/workspace
+                        cd /app/src/workspace
+                        ie-app-publisher-linux de c -u http://docker:2375
+                        export IE_SKIP_CERTIFICATE=true
+                        ie-app-publisher-linux em li -u "$IEM_URL" -e $USER_NAME -p $PSWD
+                        ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
+                        ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
+                     """
+                }  
             }        
         }
     }
