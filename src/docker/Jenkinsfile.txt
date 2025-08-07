@@ -2,8 +2,33 @@ node {
     checkout scm
     withEnv(['HOME=.']) {          
         docker.image('docker:24-dind').withRun('-p 2375:2375 --privileged -e DOCKER_TLS_CERTDIR=""') { c ->
-            sh "echo 'Warte auf dind...'; sleep 60"
-            sh "nc -zv docker 2375 || :"
+            // --- Start: Dynamischer Bereitschafts-Check für dind ---
+            script {
+                def dindReady = false
+                echo "Warte auf dind-Daemon..."
+                // Versuche maximal 60 Sekunden lang, den dind-Daemon zu kontaktieren
+                for (int i = 0; i < 60; i++) {
+                    try {
+                        // Versuche, den Docker-Daemon zu kontaktieren.
+                        // Wir verwenden 'localhost:2375', da der Port vom dind-Container
+                        // auf den Jenkins-Agenten gemappt wurde (-p 2375:2375).
+                        // '> /dev/null 2>&1' leitet die Ausgabe um, um das Log sauber zu halten.
+                        sh "docker --host tcp://localhost:2375 info > /dev/null 2>&1"
+                        echo "Dind-Daemon ist bereit!"
+                        dindReady = true
+                        break // Schleife verlassen, wenn der Daemon bereit ist
+                    } catch (Exception e) {
+                        // Wenn der Befehl fehlschlägt, ist der Daemon noch nicht bereit
+                        echo "Dind-Daemon noch nicht bereit, versuche es in 1 Sekunde erneut... (${i+1}/60)"
+                        sleep 1 // Eine Sekunde warten vor dem nächsten Versuch
+                    }
+                }
+
+                if (!dindReady) {
+                    // Wenn der Daemon nach 60 Sekunden immer noch nicht bereit ist, den Build abbrechen
+                    error "Dind-Daemon wurde nicht innerhalb der erwarteten Zeit bereit."
+                }
+            }
             docker.image("${env.DOCKER_IMAGE_CLI}").inside("--link ${c.id}:docker --privileged -u root") {
                 stage ('Build') {
                     sh """
