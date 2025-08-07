@@ -2,7 +2,6 @@ node {
     checkout scm
     withEnv(['HOME=.']) {          
         docker.image('docker:24-dind').withRun('-p 2375:2375 --privileged -e DOCKER_TLS_CERTDIR=""') { c ->
-            sh "echo 'Warte auf dind...'; sleep 10"
             sh "nc -zv docker 2375 || :"
             docker.image("${env.DOCKER_IMAGE_CLI}").inside("--link ${c.id}:docker --privileged -u root") {
                 stage ('Build') {
