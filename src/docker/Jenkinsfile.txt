@@ -16,7 +16,8 @@ node {
                 }
                 stage ('Upload') {
                      sh """
-                        cp -RT app /app/src/workspace
+                        export DOCKER_HOST=tcp://docker:2375
+                        cp -RT src/docker/app /app/src/workspace
                         cd /app/src/workspace
                         ie-app-publisher-linux de c -u http://docker:2375
                         export IE_SKIP_CERTIFICATE=true
