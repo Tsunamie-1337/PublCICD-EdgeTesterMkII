@@ -8,8 +8,11 @@ node {
                     stage ('Build') {
                         sh """
                             cd src/docker/app
-                            docker-compose --host tcp://docker:2375 build
-                            docker --host tcp://docker:2375 images
+                            export DOCKER_HOST=tcp://docker:2375
+                            env | grep DOCKER
+                            echo "DOCKER_HOST=$DOCKER_HOST"
+                            docker-compose build
+                            docker images
                             cd ..
                         """
                     }
