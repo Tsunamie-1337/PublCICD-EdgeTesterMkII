@@ -2,14 +2,14 @@ node {
     checkout scm
     withEnv(['HOME=.']) {          
         docker.image('docker:24-dind').withRun('-p 2375:2375 --privileged -e DOCKER_TLS_CERTDIR=""') { c ->
-            // Dynamic check for dind daemon readiness
+            // Dynamic check for Dind-Daemon readiness
             script {
                 def dindReady = false
                 echo "Waiting for Dind-Daemon..."
 
                 for (int i = 0; i < 60; i++) {
                     try {
-                        // Versuche, den Docker-Daemon zu kontaktieren.
+                        // Tries to connect to the Dind-Daemon
                         // 'localhost:2375' is the port where the Docker daemon is exposed. Look at line 4
                         // '> /dev/null 2>&1' redircets output to avoid cluttering the logs
                         sh "docker --host tcp://localhost:2375 info > /dev/null 2>&1"
