@@ -50,6 +50,9 @@ node {
                         ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
                      """
                 }  
+
+                //Moeglich CLI Schnittstelle fuer automatischen Upload einzubauen.
+                // Erst Waittimer dann der CLI push auf das IEVD
             }        
         }
     }
