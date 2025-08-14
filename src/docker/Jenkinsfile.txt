@@ -53,6 +53,7 @@ node {
 
                 //Moeglich CLI Schnittstelle fuer automatischen Upload einzubauen.
                 // Erst Waittimer dann der CLI push auf das IEVD
+                //CLI Doku ist unter der edge doku schau im dateibau links und durchblaettern
             }        
         }
     }
