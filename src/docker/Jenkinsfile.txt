@@ -1,60 +1,126 @@
 node {
-    checkout scm
-    withEnv(['HOME=.']) {          
+    // Globale Umgebungsvariablen definieren
+    // Passe 'your.docker.registry.com/your-username/' an deine Registry an!
+    env.FRONTEND_IMAGE_NAME = "your.docker.registry.com/your-username/frontend-react"
+    env.BACKEND_IMAGE_NAME = "your.docker.registry.com/your-username/backend-flask"
+
+    // Optional: Wenn du den DOCKER_IMAGE_CLI nicht global gesetzt hast
+    // env.DOCKER_IMAGE_CLI = "tsunamie1337/cicd-pipeline-mk2:latest" // Dein spezielles CLI-Image
+
+    checkout scm // Holt den Code aus dem SCM (Git)
+
+    withEnv(['HOME=.']) {
+        // Startet einen Docker-in-Docker (Dind) Container
         docker.image('docker:24-dind').withRun('-p 2375:2375 --privileged -e DOCKER_TLS_CERTDIR=""') { c ->
-            // Dynamic check for Dind-Daemon readiness
+            // Dynamische Überprüfung der Dind-Daemon-Bereitschaft
             script {
                 def dindReady = false
                 echo "Waiting for Dind-Daemon..."
 
                 for (int i = 0; i < 60; i++) {
                     try {
-                        // Tries to connect to the Dind-Daemon
-                        // 'localhost:2375' is the port where the Docker daemon is exposed. Look at line 4
-                        // '> /dev/null 2>&1' redircets output to avoid cluttering the logs
                         sh "docker --host tcp://localhost:2375 info > /dev/null 2>&1"
                         echo "Dind-Daemon is ready!"
                         dindReady = true
-                        break 
-                    } catch (Exception e) {//Dind-Daemon wasn't ready for another second
+                        break
+                    } catch (Exception e) {
                         echo "Dind-Daemon is not ready yet, trying again in 1 second... (${i+1}/60)"
-                        sleep 1 
+                        sleep 1
                     }
                 }
 
-                if (!dindReady) { // throws error if dind is not ready after 60 seconds
+                if (!dindReady) {
                     error "Dind-Daemon is not ready in the expected timeframe."
                 }
             }
-            //Start the Docker CLI inside the Dind container
-            docker.image("${env.DOCKER_IMAGE_CLI}").inside("--link ${c.id}:docker --privileged -u root") {
-                stage ('Build') {
-                    sh """
-                        cd src/docker/app
-                        export DOCKER_HOST=tcp://docker:2375
-                        docker-compose build
-                        docker images
-                        cd ..
-                    """
-                }
-                // Push the image to the registry
-                stage ('Upload') {
-                     sh """
-                        export DOCKER_HOST=tcp://docker:2375
-                        cp -RT src/docker/app /app/src/workspace
-                        cd /app/src/workspace
-                        ie-app-publisher-linux de c -u http://docker:2375
-                        export IE_SKIP_CERTIFICATE=true
-                        ie-app-publisher-linux em li -u "$IEM_URL" -e $USER_NAME -p $PSWD
-                        ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
-                        ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
-                     """
-                }  
 
-                //Moeglich CLI Schnittstelle fuer automatischen Upload einzubauen.
-                // Erst Waittimer dann der CLI push auf das IEVD
-                //CLI Doku ist unter der edge doku schau im dateibau links und durchblaettern
-            }        
+            // Startet den Docker CLI Client in einem separaten Container, der mit Dind verbunden ist
+            // Stelle sicher, dass env.DOCKER_IMAGE_CLI korrekt gesetzt ist (z.B. in den Jenkins Global Properties)
+            docker.image("${env.DOCKER_IMAGE_CLI}").inside("--link ${c.id}:docker --privileged -u root") {
+
+                stage ('Build Application Images') {
+                    steps {
+                        script {
+                            echo "Building Frontend React Image..."
+                            // Pfad zum Dockerfile und Build-Kontext anpassen
+                            // Annahme: Dockerfile.example ist das Dockerfile
+                            sh """
+                                export DOCKER_HOST=tcp://docker:2375
+                                docker build -t ${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER} -t ${env.FRONTEND_IMAGE_NAME}:latest -f src/frontend_react/Dockerfile.example src/frontend_react/
+                            """
+
+                            echo "Building Backend Flask Image..."
+                            // Pfad zum Dockerfile und Build-Kontext anpassen
+                            sh """
+                                export DOCKER_HOST=tcp://docker:2375
+                                docker build -t ${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER} -t ${env.BACKEND_IMAGE_NAME}:latest -f src/backend_flask/Dockerfile.example src/backend_flask/
+                            """
+                            sh "docker --host tcp://localhost:2375 images" // Zeigt die gebauten Images an
+                        }
+                    }
+                }
+
+                stage ('Push Application Images') {
+                    steps {
+                        script {
+                            echo "Pushing Frontend React Image..."
+                            sh "export DOCKER_HOST=tcp://docker:2375; docker push ${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                            sh "export DOCKER_HOST=tcp://docker:2375; docker push ${env.FRONTEND_IMAGE_NAME}:latest"
+
+                            echo "Pushing Backend Flask Image..."
+                            sh "export DOCKER_HOST=tcp://docker:2375; docker push ${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                            sh "export DOCKER_HOST=tcp://docker:2375; docker push ${env.BACKEND_IMAGE_NAME}:latest"
+                        }
+                    }
+                }
+
+                stage ('Upload to IEM and Deploy to Edge Device') {
+                    steps {
+                        script {
+                            // Kopiere den gesamten src/docker/app Ordner (mit docker-compose.yml und ie-app-publisher-linux)
+                            // in den Arbeitsbereich des CLI Containers.
+                            // Wichtig: Hier wird angenommen, dass docker-compose.yml die Platzhalter für die Image-Namen enthält,
+                            // die dann vom ie-app-publisher-linux ersetzt werden, oder dass die Images direkt referenziert sind.
+                            // Wenn die docker-compose.yml noch Platzhalter wie ${BUILD_NUMBER} hat, müssen diese VOR dem Aufruf
+                            // des ie-app-publisher-linux ersetzt werden.
+                            // Beispiel: sed -i "s|\${BUILD_NUMBER}|${env.BUILD_NUMBER}|g" docker-compose.yml
+                            sh """
+                                cp -RT src/docker/app /app/src/workspace
+                                cd /app/src/workspace
+
+                                # Optional: Ersetze Platzhalter in docker-compose.yml, falls vorhanden
+                                # sed -i "s|\${FRONTEND_IMAGE_NAME}|${env.FRONTEND_IMAGE_NAME}|g" docker-compose.yml
+                                # sed -i "s|\${BACKEND_IMAGE_NAME}|${env.BACKEND_IMAGE_NAME}|g" docker-compose.yml
+                                # sed -i "s|\${BUILD_NUMBER}|${env.BUILD_NUMBER}|g" docker-compose.yml
+
+                                ie-app-publisher-linux de c -u http://docker:2375
+                                export IE_SKIP_CERTIFICATE=true # Vorsicht: Nur für Dev/Test Umgebungen!
+                                ie-app-publisher-linux em li -u "$IEM_URL" -e "$USER_NAME" -p "$PSWD"
+
+                                # Passe die Parameter für cuv an deine docker-compose.yml und Ingress-Regeln an
+                                # Die -n Parameter müssen die Komponenten aus deiner docker-compose.yml widerspiegeln
+                                # und die gewünschten Routen und Ports definieren.
+                                ie-app-publisher-linux em app cuv \\
+                                    -a "$APP_ID" \\
+                                    -v "0.0.${env.BUILD_NUMBER}" \\
+                                    -y "./docker-compose.yml" \\
+                                    -n '[{"name":"frontend","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/","route":"/"}, {"name":"backend","protocol":"HTTP","port":"5000","headers":"","rewriteTarget":"/api/","route":"/api/"}]' \\
+                                    -s "my-edge-app" \\
+                                    -t "FromBoxReverseProxy" \\
+                                    -u "my-edge-app" \\
+                                    -r "/"
+
+                                ie-app-publisher-linux em app uuv -a "$APP_ID" -v "0.0.${env.BUILD_NUMBER}"
+                            """
+                            echo "Application uploaded to IEM. Waiting for deployment to Edge Device..."
+                            sleep 120 // Passe dies an die tatsächliche Deployment-Zeit an
+                        }
+                    }
+                }
+
+                // Die Stages für Connectivity Tests und Cleanup sind hier nicht enthalten,
+                // da du diese erst später hinzufügen möchtest.
+            }
         }
     }
 }
