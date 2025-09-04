@@ -1,11 +1,2 @@
-src/docker/dockerfile/industrial-edge-app-publisher.deb
-src/docker/dockerfile/industrial-edge-app-publisher-*.deb
-src/docker/dockerfile/industrial-edge-app-publisher
-src/docker/dockerfile/industrial-edge-app-publisher-*
-src/docker/dockerfile/ie-app-publisher-linux
-
-src/docker/industrial-edge-app-publisher.deb
-src/docker/industrial-edge-app-publisher-*.deb
-src/docker/industrial-edge-app-publisher
-src/docker/industrial-edge-app-publisher-*
-src/docker/ie-app-publisher-linux
+src/docker/**/industrial-edge-app-publisher*
+src/docker/**/ie-app-publisher-linux
