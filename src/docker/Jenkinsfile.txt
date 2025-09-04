@@ -39,87 +39,74 @@ node {
             docker.image("${env.DOCKER_IMAGE_CLI}").inside("--link ${c.id}:docker --privileged -u root") {
 
                 stage ('Build Application Images') {
-                    steps {
-                        script {
-                            echo "Building Frontend React Image..."
-                            // Pfad zum Dockerfile und Build-Kontext anpassen
-                            // Annahme: Dockerfile.example ist das Dockerfile
-                            sh """
-                                export DOCKER_HOST=tcp://docker:2375
-                                docker build -t ${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER} -t ${env.FRONTEND_IMAGE_NAME}:latest -f src/frontend_react/Dockerfile.example src/frontend_react/
-                            """
+                    // KEIN 'steps' BLOCK HIER!
+                    script {
+                        echo "Building Frontend React Image..."
+                        // Pfad zum Dockerfile und Build-Kontext anpassen
+                        sh """
+                            export DOCKER_HOST=tcp://docker:2375
+                            docker build -t ${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER} -t ${env.FRONTEND_IMAGE_NAME}:latest -f src/frontend_react/Dockerfile.example src/frontend_react/
+                        """
 
-                            echo "Building Backend Flask Image..."
-                            // Pfad zum Dockerfile und Build-Kontext anpassen
-                            sh """
-                                export DOCKER_HOST=tcp://docker:2375
-                                docker build -t ${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER} -t ${env.BACKEND_IMAGE_NAME}:latest -f src/backend_flask/Dockerfile.example src/backend_flask/
-                            """
-                            sh "docker --host tcp://localhost:2375 images" // Zeigt die gebauten Images an
-                        }
+                        echo "Building Backend Flask Image..."
+                        sh """
+                            export DOCKER_HOST=tcp://docker:2375
+                            docker build -t ${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER} -t ${env.BACKEND_IMAGE_NAME}:latest -f src/backend_flask/Dockerfile.example src/backend_flask/
+                        """
+                        sh "docker --host tcp://localhost:2375 images" // Zeigt die gebauten Images an
                     }
                 }
 
                 stage ('Push Application Images') {
-                    steps {
-                        script {
-                            echo "Pushing Frontend React Image..."
-                            sh "export DOCKER_HOST=tcp://docker:2375; docker push ${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
-                            sh "export DOCKER_HOST=tcp://docker:2375; docker push ${env.FRONTEND_IMAGE_NAME}:latest"
+                    // KEIN 'steps' BLOCK HIER!
+                    script {
+                        echo "Pushing Frontend React Image..."
+                        sh "export DOCKER_HOST=tcp://docker:2375; docker push ${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                        sh "export DOCKER_HOST=tcp://docker:2375; docker push ${env.FRONTEND_IMAGE_NAME}:latest"
 
-                            echo "Pushing Backend Flask Image..."
-                            sh "export DOCKER_HOST=tcp://docker:2375; docker push ${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
-                            sh "export DOCKER_HOST=tcp://docker:2375; docker push ${env.BACKEND_IMAGE_NAME}:latest"
-                        }
+                        echo "Pushing Backend Flask Image..."
+                        sh "export DOCKER_HOST=tcp://docker:2375; docker push ${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                        sh "export DOCKER_HOST=tcp://docker:2375; docker push ${env.BACKEND_IMAGE_NAME}:latest"
                     }
                 }
 
                 stage ('Upload to IEM and Deploy to Edge Device') {
-                    steps {
-                        script {
-                            // Kopiere den gesamten src/docker/app Ordner (mit docker-compose.yml und ie-app-publisher-linux)
-                            // in den Arbeitsbereich des CLI Containers.
-                            // Wichtig: Hier wird angenommen, dass docker-compose.yml die Platzhalter für die Image-Namen enthält,
-                            // die dann vom ie-app-publisher-linux ersetzt werden, oder dass die Images direkt referenziert sind.
-                            // Wenn die docker-compose.yml noch Platzhalter wie ${BUILD_NUMBER} hat, müssen diese VOR dem Aufruf
-                            // des ie-app-publisher-linux ersetzt werden.
-                            // Beispiel: sed -i "s|\${BUILD_NUMBER}|${env.BUILD_NUMBER}|g" docker-compose.yml
-                            sh """
-                                cp -RT src/docker/app /app/src/workspace
-                                cd /app/src/workspace
+                    // KEIN 'steps' BLOCK HIER!
+                    script {
+                        // Kopiere den gesamten src/docker/app Ordner (mit docker-compose.yml und ie-app-publisher-linux)
+                        // in den Arbeitsbereich des CLI Containers.
+                        sh """
+                            cp -RT src/docker/app /app/src/workspace
+                            cd /app/src/workspace
 
-                                # Optional: Ersetze Platzhalter in docker-compose.yml, falls vorhanden
-                                # sed -i "s|\${FRONTEND_IMAGE_NAME}|${env.FRONTEND_IMAGE_NAME}|g" docker-compose.yml
-                                # sed -i "s|\${BACKEND_IMAGE_NAME}|${env.BACKEND_IMAGE_NAME}|g" docker-compose.yml
-                                # sed -i "s|\${BUILD_NUMBER}|${env.BUILD_NUMBER}|g" docker-compose.yml
+                            # Optional: Ersetze Platzhalter in docker-compose.yml, falls vorhanden
+                            # sed -i "s|\${FRONTEND_IMAGE_NAME}|${env.FRONTEND_IMAGE_NAME}|g" docker-compose.yml
+                            # sed -i "s|\${BACKEND_IMAGE_NAME}|${env.BACKEND_IMAGE_NAME}|g" docker-compose.yml
+                            # sed -i "s|\${BUILD_NUMBER}|${env.BUILD_NUMBER}|g" docker-compose.yml
 
-                                ie-app-publisher-linux de c -u http://docker:2375
-                                export IE_SKIP_CERTIFICATE=true # Vorsicht: Nur für Dev/Test Umgebungen!
-                                ie-app-publisher-linux em li -u "$IEM_URL" -e "$USER_NAME" -p "$PSWD"
+                            ie-app-publisher-linux de c -u http://docker:2375
+                            export IE_SKIP_CERTIFICATE=true # Vorsicht: Nur für Dev/Test Umgebungen!
+                            ie-app-publisher-linux em li -u "$IEM_URL" -e "$USER_NAME" -p "$PSWD"
 
-                                # Passe die Parameter für cuv an deine docker-compose.yml und Ingress-Regeln an
-                                # Die -n Parameter müssen die Komponenten aus deiner docker-compose.yml widerspiegeln
-                                # und die gewünschten Routen und Ports definieren.
-                                ie-app-publisher-linux em app cuv \\
-                                    -a "$APP_ID" \\
-                                    -v "0.0.${env.BUILD_NUMBER}" \\
-                                    -y "./docker-compose.yml" \\
-                                    -n '[{"name":"frontend","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/","route":"/"}, {"name":"backend","protocol":"HTTP","port":"5000","headers":"","rewriteTarget":"/api/","route":"/api/"}]' \\
-                                    -s "my-edge-app" \\
-                                    -t "FromBoxReverseProxy" \\
-                                    -u "my-edge-app" \\
-                                    -r "/"
+                            # Passe die Parameter für cuv an deine docker-compose.yml und Ingress-Regeln an
+                            # Die -n Parameter müssen die Komponenten aus deiner docker-compose.yml widerspiegeln
+                            # und die gewünschten Routen und Ports definieren.
+                            ie-app-publisher-linux em app cuv \\
+                                -a "$APP_ID" \\
+                                -v "0.0.${env.BUILD_NUMBER}" \\
+                                -y "./docker-compose.yml" \\
+                                -n '[{"name":"frontend","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/","route":"/"}, {"name":"backend","protocol":"HTTP","port":"5000","headers":"","rewriteTarget":"/api/","route":"/api/"}]' \\
+                                -s "my-edge-app" \\
+                                -t "FromBoxReverseProxy" \\
+                                -u "my-edge-app" \\
+                                -r "/"
 
-                                ie-app-publisher-linux em app uuv -a "$APP_ID" -v "0.0.${env.BUILD_NUMBER}"
-                            """
-                            echo "Application uploaded to IEM. Waiting for deployment to Edge Device..."
-                            sleep 120 // Passe dies an die tatsächliche Deployment-Zeit an
-                        }
+                            ie-app-publisher-linux em app uuv -a "$APP_ID" -v "0.0.${env.BUILD_NUMBER}"
+                        """
+                        echo "Application uploaded to IEM. Waiting for deployment to Edge Device..."
+                        sleep 120 // Passe dies an die tatsächliche Deployment-Zeit an
                     }
                 }
-
-                // Die Stages für Connectivity Tests und Cleanup sind hier nicht enthalten,
-                // da du diese erst später hinzufügen möchtest.
             }
         }
     }
