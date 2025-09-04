@@ -1,145 +1,60 @@
-// Jenkinsfile
 node {
-    // Globale Umgebungsvariablen definieren
-    // ERSETZE DIESE WERTE MIT DEINER DOCKER REGISTRY UND DEINEM BENUTZERNAMEN!
-    env.FRONTEND_IMAGE_NAME = "your.docker.registry.com/your-username/frontend-react"
-    env.BACKEND_IMAGE_NAME = "your.docker.registry.com/your-username/backend-flask"
+    // ... (deine env-Variablen und checkout scm)
 
-    // Das Docker CLI Image, das in deinem Dind-Setup verwendet wird.
-    // Dies ist das Image, das die Docker-Befehle ausführt und den ie-app-publisher-linux enthält.
-    // Stelle sicher, dass dieses Image existiert und die notwendigen Tools enthält.
-    env.DOCKER_IMAGE_CLI = "tsunamie1337/cicd-pipeline-mk2:latest"
-
-    // Jenkins Credentials für den Industrial Edge Management (IEM) Login.
-    // Diese müssen in Jenkins unter "Manage Jenkins" -> "Manage Credentials" angelegt werden.
-    // Typ: Secret Text oder Username with password.
-    // Beispiel:
-    // IEM_URL: Eine Secret Text Credential mit der URL deines IEM.
-    // USER_NAME: Eine Secret Text Credential mit deinem IEM Benutzernamen.
-    // PSWD: Eine Secret Text Credential mit deinem IEM Passwort.
-    // APP_ID: Eine Secret Text Credential mit der Anwendungs-ID in IEM.
-    // Beispiel für die Verwendung von Credentials:
-    // withCredentials([string(credentialsId: 'IEM_URL_CRED', variable: 'IEM_URL')]) {
-    //    // ... dann im sh-Block "$IEM_URL" verwenden
-    // }
-    // Für dieses Beispiel gehen wir davon aus, dass diese als globale Umgebungsvariablen
-    // oder Build-Parameter in Jenkins gesetzt sind.
-
-    checkout scm // Holt den Code aus dem SCM (Git) in den Jenkins Workspace
-
-    withEnv(['HOME=.']) { // Setzt HOME auf das aktuelle Verzeichnis, wichtig für einige Tools
-        // Startet einen Docker-in-Docker (Dind) Container.
-        // Dieser Container stellt einen isolierten Docker-Daemon bereit.
+    withEnv(['HOME=.']) {
         docker.image('docker:24-dind').withRun('-p 2375:2375 --privileged -e DOCKER_TLS_CERTDIR=""') { c ->
-            // Dynamische Überprüfung der Dind-Daemon-Bereitschaft.
-            // Stellt sicher, dass der Docker-Daemon im Dind-Container gestartet ist,
-            // bevor weitere Docker-Befehle ausgeführt werden.
-            script {
-                def dindReady = false
-                echo "Waiting for Dind-Daemon..."
+            // ... (Dind-Daemon readiness check)
 
-                for (int i = 0; i < 60; i++) { // Versucht 60 Sekunden lang alle 1 Sekunde
-                    try {
-                        // Versucht, Informationen vom Dind-Daemon über den exponierten Port abzurufen.
-                        // 'localhost:2375' ist der Port, wo der Docker-Daemon im Dind-Container exponiert wird.
-                        sh "docker --host tcp://localhost:2375 info > /dev/null 2>&1"
-                        echo "Dind-Daemon is ready!"
-                        dindReady = true
-                        break // Daemon ist bereit, Schleife beenden
-                    } catch (Exception e) {
-                        echo "Dind-Daemon is not ready yet, trying again in 1 second... (${i+1}/60)"
-                        sleep 1 // Eine Sekunde warten vor dem nächsten Versuch
-                    }
-                }
-
-                if (!dindReady) { // Falls der Daemon nach 60 Sekunden nicht bereit ist, Fehler werfen
-                    error "Dind-Daemon is not ready in the expected timeframe."
-                }
-            }
-
-            // Startet den Docker CLI Client in einem separaten Container.
-            // Dieser Container ist mit dem Dind-Container über einen Link verbunden,
-            // sodass er dessen Docker-Daemon nutzen kann.
-            // --privileged -u root: Notwendig für einige Docker-Operationen innerhalb des Containers.
             docker.image("${env.DOCKER_IMAGE_CLI}").inside("--link ${c.id}:docker --privileged -u root") {
-                // Setzt die DOCKER_HOST Umgebungsvariable global für alle Shell-Befehle
-                // innerhalb dieses 'inside' Blocks. Dadurch wissen alle 'docker' Befehle,
-                // dass sie mit dem Dind-Daemon über den Hostnamen 'docker' kommunizieren sollen.
-                sh "export DOCKER_HOST=tcp://docker:2375"
+                // Die globale 'export DOCKER_HOST' Zeile entfernen oder auskommentieren,
+                // da wir den Host jetzt explizit bei jedem Befehl angeben.
+                // sh "export DOCKER_HOST=tcp://docker:2375" // <-- DIESE ZEILE ENTFERNEN ODER AUSKOMMENTIEREN
 
-                // Stage zum Bauen der Anwendungs-Images (Frontend und Backend)
                 stage ('Build Application Images') {
                     script {
                         echo "Building Frontend React Image..."
-                        // Baut das Frontend-Image.
-                        // -t: Taggt das Image mit der Jenkins Build-Nummer und 'latest'.
-                        // -f src/frontend_react/Dockerfile.example: Gibt den Pfad zum Dockerfile an.
-                        // src/frontend_react/: Der Build-Kontext (Verzeichnis, aus dem Dateien kopiert werden).
+                        // Explizite Angabe des DOCKER_HOST für den docker build Befehl
                         sh """
-                            docker build -t ${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER} -t ${env.FRONTEND_IMAGE_NAME}:latest -f src/frontend_react/Dockerfile.example src/frontend_react/
+                            DOCKER_HOST=tcp://docker:2375 docker build -t ${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER} -t ${env.FRONTEND_IMAGE_NAME}:latest -f src/frontend_react/Dockerfile.example src/frontend_react/
                         """
 
                         echo "Building Backend Flask Image..."
-                        // Baut das Backend-Image.
+                        // Explizite Angabe des DOCKER_HOST für den docker build Befehl
                         sh """
-                            docker build -t ${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER} -t ${env.BACKEND_IMAGE_NAME}:latest -f src/backend_flask/Dockerfile.example src/backend_flask/
+                            DOCKER_HOST=tcp://docker:2375 docker build -t ${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER} -t ${env.BACKEND_IMAGE_NAME}:latest -f src/backend_flask/Dockerfile.example src/backend_flask/
                         """
-                        sh "docker images" // Zeigt die lokal gebauten Docker-Images an
+                        // Explizite Angabe des DOCKER_HOST für den docker images Befehl
+                        sh "DOCKER_HOST=tcp://docker:2375 docker images"
                     }
                 }
 
-                // Stage zum Pushen der gebauten Images in die Docker Registry
                 stage ('Push Application Images') {
                     script {
                         echo "Pushing Frontend React Image..."
-                        sh "docker push ${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
-                        sh "docker push ${env.FRONTEND_IMAGE_NAME}:latest"
+                        // Explizite Angabe des DOCKER_HOST für den docker push Befehl
+                        sh "DOCKER_HOST=tcp://docker:2375 docker push ${env.FRONTEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                        sh "DOCKER_HOST=tcp://docker:2375 docker push ${env.FRONTEND_IMAGE_NAME}:latest"
 
                         echo "Pushing Backend Flask Image..."
-                        sh "docker push ${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
-                        sh "docker push ${env.BACKEND_IMAGE_NAME}:latest"
+                        sh "DOCKER_HOST=tcp://docker:2375 docker push ${env.BACKEND_IMAGE_NAME}:${env.BUILD_NUMBER}"
+                        sh "DOCKER_HOST=tcp://docker:2375 docker push ${env.BACKEND_IMAGE_NAME}:latest"
                     }
                 }
 
-                // Stage zum Hochladen der Anwendung in den Industrial Edge Management (IEM)
-                // und zum Starten des Deployments auf das Edge Device
                 stage ('Upload to IEM and Deploy to Edge Device') {
                     script {
-                        // Kopiert den Inhalt des 'src/docker/app' Verzeichnisses
-                        // (das deine docker-compose.yml und den ie-app-publisher-linux enthält)
-                        // in den Arbeitsbereich des aktuellen Docker CLI Containers.
                         sh """
                             cp -RT src/docker/app /app/src/workspace
                             cd /app/src/workspace
 
-                            # Optional: Ersetze Platzhalter in docker-compose.yml, falls diese nicht automatisch
-                            # vom ie-app-publisher-linux verarbeitet werden.
-                            # Beispiel für die Ersetzung der BUILD_NUMBER im Image-Tag:
-                            # sed -i "s|\\\${BUILD_NUMBER}|${env.BUILD_NUMBER}|g" docker-compose.yml
-                            # Dies ist oft notwendig, wenn die docker-compose.yml statische Image-Namen
-                            # ohne Tags verwendet und du den Tag dynamisch hinzufügen möchtest.
-                            # Wenn deine docker-compose.yml bereits die ${BUILD_NUMBER} im Image-Tag hat
-                            # (wie in den Beispielen zuvor), dann ist diese sed-Zeile nicht zwingend notwendig,
-                            # da ie-app-publisher-linux dies oft intern handhabt.
-
-                            # Konfiguriert den App Publisher für die Kommunikation mit dem Docker-Daemon
+                            # Hier ist es wichtig, dass der ie-app-publisher-linux den DOCKER_HOST Parameter
+                            # selbst über den -u Parameter bekommt, wie du es bereits hast.
+                            # Wenn er intern weitere 'docker' Befehle ausführt, die nicht den -u Parameter bekommen,
+                            # könnte es hier wieder zu Problemen kommen. Aber dein aktueller Befehl ist korrekt.
                             ie-app-publisher-linux de c -u http://docker:2375
-                            export IE_SKIP_CERTIFICATE=true # WARNUNG: Nur für Testumgebungen! Deaktiviert Zertifikatsprüfung.
-                            # Loggt sich beim Industrial Edge Management (IEM) ein
+                            export IE_SKIP_CERTIFICATE=true
                             ie-app-publisher-linux em li -u "$IEM_URL" -e "$USER_NAME" -p "$PSWD"
 
-                            # Erstellt oder aktualisiert eine Anwendungsversion in IEM.
-                            # -a "$APP_ID": Die Anwendungs-ID in IEM.
-                            # -v "0.0.${env.BUILD_NUMBER}": Die Version der Anwendung (hier dynamisch mit Jenkins Build-Nummer).
-                            # -y "./docker-compose.yml": Pfad zur docker-compose-Datei.
-                            # -n '[...]': Definiert die Ingress-Regeln für den Reverse Proxy auf dem Edge Device.
-                            #   - name: Muss mit dem 'com.siemens.industrial-edge.app.component.name' Label in docker-compose.yml übereinstimmen.
-                            #   - protocol, port: Protokoll und Port des Containers.
-                            #   - rewriteTarget, route: Pfad-Mapping für den Reverse Proxy.
-                            # -s "my-edge-app": Der Name der Edge-App.
-                            # -t "FromBoxReverseProxy": Der Typ des Reverse Proxys.
-                            # -u "my-edge-app": Der URL-Pfad der App.
-                            # -r "/": Die Basisroute der App.
                             ie-app-publisher-linux em app cuv \\
                                 -a "$APP_ID" \\
                                 -v "0.0.${env.BUILD_NUMBER}" \\
@@ -150,18 +65,12 @@ node {
                                 -u "my-edge-app" \\
                                 -r "/"
 
-                            # Lädt die erstellte Anwendungsversion in IEM hoch.
                             ie-app-publisher-linux em app uuv -a "$APP_ID" -v "0.0.${env.BUILD_NUMBER}"
                         """
                         echo "Application uploaded to IEM. Waiting for deployment to Edge Device..."
-                        // Eine Wartezeit, um dem Edge Device genügend Zeit für das Deployment zu geben.
-                        // Dies ist ein statischer Wert; in einer Produktionsumgebung wäre ein dynamischer Readiness-Check besser.
                         sleep 120
                     }
                 }
-
-                // Hier könnten später weitere Stages folgen, z.B. für Connectivity Tests,
-                // nachdem das Deployment erfolgreich war.
             }
         }
     }
