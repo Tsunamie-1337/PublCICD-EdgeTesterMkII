@@ -7,7 +7,6 @@ pipeline {
                 checkout scm
             }
         }
-
         stage('Build Images') {
             steps {
                 dir('src/docker') {
@@ -24,7 +23,7 @@ pipeline {
         }
         stage('Test') {
             steps {
-                // Tests, API-Aufrufe etc.
+                echo 'No tests implemented yet'
             }
         }
         stage('Shutdown') {
