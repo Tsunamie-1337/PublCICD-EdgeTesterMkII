@@ -1,52 +1,45 @@
 pipeline {
     agent any
 
-    environment {
-        // Definiere hier ggf. Umgebungsvariablen
-        DOCKER_BUILDKIT = "1"
-    }
-
     stages {
         stage('Checkout') {
             steps {
-                // Hole den aktuellen Stand aus dem Git-Repo (automatisch bei Multibranch-Pipeline)
                 checkout scm
             }
         }
 
         stage('Build Images') {
             steps {
-                sh 'docker compose build'
+                dir('src/docker') {
+                    sh 'docker compose build'
+                }
             }
         }
-
         stage('Start Services') {
             steps {
-                sh 'docker compose up -d'
+                dir('src/docker') {
+                    sh 'docker compose up -d'
+                }
             }
         }
-
-        // Optional: Integrationstests
         stage('Test') {
             steps {
-                // Hier Testcommands, z.B.:
-                // sh 'curl http://localhost:3000/health'
-                // sh 'curl http://localhost:8080'
-                echo 'You can add API or UI tests here...'
+                // Tests, API-Aufrufe etc.
             }
         }
-
         stage('Shutdown') {
             steps {
-                sh 'docker compose down'
+                dir('src/docker') {
+                    sh 'docker compose down'
+                }
             }
         }
     }
-
     post {
         always {
-            // Stellt sicher, dass Compose-Container am Ende abgeräumt werden
-            sh 'docker compose down || true'
+            dir('src/docker') {
+                sh 'docker compose down || true'
+            }
         }
     }
 }
