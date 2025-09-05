@@ -14,6 +14,12 @@ pipeline {
                 }
             }
         }
+        stage('Debug List') {
+            steps {
+                    sh 'ls -l /var/lib/jenkins/workspace/IEV-JankisPipelineMkI'
+                    sh 'ls -l /var/lib/jenkins/workspace/IEV-JankisPipelineMkI/src'
+                 }
+        }
         stage('Start Services') {
             steps {
                 dir('src/docker') {
