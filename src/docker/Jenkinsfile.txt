@@ -51,6 +51,8 @@ pipeline {
                 export DOCKER_HOST=unix:///var/run/docker.sock
                 ie-app-publisher-linux de c || true
 
+                curl http://localhost:2375/version
+
                 echo "--- Ende Diagnose. ---"
 
 
