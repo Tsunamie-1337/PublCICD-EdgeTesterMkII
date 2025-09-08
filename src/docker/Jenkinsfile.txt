@@ -32,7 +32,7 @@ pipeline {
                 dir('src/docker') { //The app publisher was copied into the /usr/local/bin/ directory beforehand
                     sh '''
                 # ---- Configure Docker Engine ----
-                ie-app-publisher-linux de c
+                ie-app-publisher-linux de c -u unix:///var/run/docker.sock
 
                 # ---- Login into Edge Management ----
                 ie-app-publisher-linux em li -u "$IEM_URL" -e "$USER_NAME" -p "$PSWD"
