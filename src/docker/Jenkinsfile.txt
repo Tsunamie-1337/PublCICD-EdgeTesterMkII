@@ -57,7 +57,7 @@ pipeline {
 
 
                 # ---- Configure Docker Engine ----
-                ie-app-publisher-linux de c -u tcp://localhost:2375
+                ie-app-publisher-linux de c -u http://localhost:2375
 
                 # ---- Login into Edge Management ----
                 ie-app-publisher-linux em li -u "$IEM_URL" -e "$USER_NAME" -p "$PSWD"
