@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_HOST = "unix:///var/run/docker.sock"  // oder tcp://docker:2375 bei DIND
+        IE_SKIP_CERTIFICATE = "true"                 // Beispiel, falls für Upload nötig
+        // Weiter env-Variablen ggf. aus Jenkins-Credentials hier angeben!
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -18,6 +24,30 @@ pipeline {
             steps {
                 dir('src/docker') {
                     sh 'docker compose up -d'
+                }
+            }
+        }
+        stage('Deploy to Edge Device') {
+            steps {
+                dir('src/docker') {
+                    // Passe hier ggf. Pfade und Service-Namen an!
+                    sh '''
+                        # Beispielhafter Export der Images (falls local export nötig).
+                        # docker save -o conntest_backend.tar conntest_backend:0.1
+                        # docker save -o conntest_frontend.tar conntest_frontend:0.1
+                        
+                        # App Publisher CLI Deployment:
+                        # Achtung, Pfade und Variablen ggf. anpassen!
+                        ie-app-publisher-linux de c -u http://localhost:2375
+                        
+                        ie-app-publisher-linux em li -u "$IEM_URL" -e $USER_NAME -p $PSWD
+                        
+                        ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml \
+                        -n '{"conntest_frontend":[{"name":"conntest_frontend","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
+                        -s 'conntest_frontend' -t 'FromBoxReverseProxy' -u "conntest_frontend" -r "/"
+
+                        ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
+                    '''
                 }
             }
         }
