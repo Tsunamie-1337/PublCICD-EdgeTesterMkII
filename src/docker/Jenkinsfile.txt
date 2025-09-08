@@ -37,6 +37,16 @@ pipeline {
                 # ---- Login into Edge Management ----
                 ie-app-publisher-linux em li -u "$IEM_URL" -e "$USER_NAME" -p "$PSWD"
 
+                # ---- DEBUG: Zeige Workspace und wichtige Files ----
+                echo "----- DEBUG: Verzeichnisinhalt (ls -l) -----"
+                ls -l
+                echo "----- DEBUG: publish-Ordner Inhalt -----"
+                ls -l publish || echo "publish fehlt!"
+                echo "----- DEBUG: cfg-data-Ordner Inhalt -----"
+                ls -l cfg-data || echo "cfg-data fehlt!"
+                echo "----- DEBUG: docker-compose.prod.yml Inhalt -----"
+                cat docker-compose.prod.yml || echo "docker-compose.prod.yml fehlt!"
+
                 # ---- App Compose Upload ----
                 ie-app-publisher-linux em app cuv \
                   -a "$APP_ID" \
