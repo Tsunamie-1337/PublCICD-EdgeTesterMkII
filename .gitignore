@@ -1,2 +1,2 @@
-src/docker/**/industrial-edge-app-publisher*
-src/docker/**/ie-app-publisher-linux
+**/industrial-edge-app-publisher*
+**/ie-app-publisher-linux
