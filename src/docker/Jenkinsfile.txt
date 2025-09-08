@@ -27,6 +27,20 @@ pipeline {
                 }
             }
         }
+        stage('Check Publisher CLI') {
+             steps {
+                dir('src/docker') {
+                    sh '''
+                      ls -lh
+                      file ie-app-publisher-linux || true
+                      ldd ie-app-publisher-linux || true
+                      chmod +x ./ie-app-publisher-linux || true
+                     ./ie-app-publisher-linux --help || echo "Publisher: not runnable"
+                    '''
+                     }
+                }
+            }
+        }
         stage('Deploy to Edge Device') {
             steps {
                 dir('src/docker') {
