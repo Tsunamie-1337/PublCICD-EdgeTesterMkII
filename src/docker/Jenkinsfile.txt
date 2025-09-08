@@ -37,9 +37,8 @@ pipeline {
                       chmod +x ./ie-app-publisher-linux || true
                      ./ie-app-publisher-linux --help || echo "Publisher: not runnable"
                     '''
-                     }
-                }
-            }
+                    }
+                 }
         }
         stage('Deploy to Edge Device') {
             steps {
