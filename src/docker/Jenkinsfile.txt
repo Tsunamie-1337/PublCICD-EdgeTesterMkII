@@ -31,6 +31,29 @@ pipeline {
             steps {
                 dir('src/docker') { //The app publisher was copied into the /usr/local/bin/ directory beforehand
                     sh '''
+                echo "--- Diagnose: Wer bin ich?" 
+                id
+                groups
+
+                echo "--- Diagnose: Kann Jenkins Docker?" 
+                docker ps
+
+                echo "--- Diagnose: Publisher CLI Help & Socket-Test(1/2)" 
+                ie-app-publisher-linux de c --help
+
+                echo "--- Diagnose: Versuch mit unix:///var/run/docker.sock" 
+                ie-app-publisher-linux de c -u unix:///var/run/docker.sock || true
+
+                echo "--- Diagnose: Versuch mit unix:/var/run/docker.sock" 
+                ie-app-publisher-linux de c -u unix:/var/run/docker.sock || true
+
+                echo "--- Diagnose: Versuch mit DOCKER_HOST var" 
+                export DOCKER_HOST=unix:///var/run/docker.sock
+                ie-app-publisher-linux de c || true
+
+                echo "--- Ende Diagnose. ---"
+
+                
                 # ---- Configure Docker Engine ----
                 ie-app-publisher-linux de c -u unix:///var/run/docker.sock
 
