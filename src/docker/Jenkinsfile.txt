@@ -30,6 +30,14 @@ pipeline {
         stage('Deploy to Edge Device') {
             steps {
                 dir('src/docker') { //The app publisher was copied into the /usr/local/bin/ directory beforehand
+
+                    sh '''
+                    ls -la
+                    ls -la publish
+                    ls -la cfg-data
+                    pwd
+                    '''
+                
                     sh '''
                 # ---- Configure Docker Engine ----
                 ie-app-publisher-linux de c -u http://localhost:2375
