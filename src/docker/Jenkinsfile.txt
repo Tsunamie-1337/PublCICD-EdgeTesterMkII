@@ -41,7 +41,7 @@ pipeline {
                 ie-app-publisher-linux em app cuv \
                   -a "$APP_ID" \
                   -v "0.0.$BUILD_NUMBER" \
-                  -y docker compose.prod.yml \
+                  -y docker-compose.prod.yml \
                   -n '{"conntest_frontend":[{"name":"conntest_frontend","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
                   -s "conntest_frontend" \
                   -t "FromBoxReverseProxy" \
