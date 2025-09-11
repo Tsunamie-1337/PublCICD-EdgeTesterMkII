@@ -1,0 +1,59 @@
+node {
+    checkout scm
+    withEnv(['HOME=.']) {          
+        docker.image('docker:24-dind').withRun('-p 2376:2375 --privileged -e DOCKER_TLS_CERTDIR=""') { c ->
+            // Dynamic check for Dind-Daemon readiness
+            script {
+                def dindReady = false
+                echo "Waiting for Dind-Daemon..."
+
+                for (int i = 0; i < 60; i++) {
+                    try {
+                        // Tries to connect to the Dind-Daemon
+                        // 'localhost:2375' is the port where the Docker daemon is exposed. Look at line 4
+                        // '> /dev/null 2>&1' redircets output to avoid cluttering the logs
+                        sh "docker --host tcp://localhost:2376 info > /dev/null 2>&1"
+                        echo "Dind-Daemon is ready!"
+                        dindReady = true
+                        break 
+                    } catch (Exception e) {//Dind-Daemon wasn't ready for another second
+                        echo "Dind-Daemon is not ready yet, trying again in 1 second... (${i+1}/60)"
+                        sleep 1 
+                    }
+                }
+
+                if (!dindReady) { // throws error if dind is not ready after 60 seconds
+                    error "Dind-Daemon is not ready in the expected timeframe."
+                }
+            }
+            //Start the Docker CLI inside the Dind container
+            docker.image("${env.DOCKER_IMAGE_CLI}").inside("--link ${c.id}:docker --privileged -u root") {
+                stage ('Build') {
+                    sh """
+                        cd src/docker/app
+                        export DOCKER_HOST=tcp://docker:2375
+                        docker-compose build
+                        docker images
+                        cd ..
+                    """
+                }
+                // Push the image to the registry
+                stage ('Upload') {
+                     sh """
+                        export DOCKER_HOST=tcp://docker:2375
+                        cp -RT src/docker/app /app/src/workspace
+                        cd /app/src/workspace
+                        ie-app-publisher-linux de c -u http://docker:2375
+                        export IE_SKIP_CERTIFICATE=true
+                        ie-app-publisher-linux em li -u "$IEM_URL" -e $USER_NAME -p $PSWD
+                        ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
+                        ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
+                     """
+                }  
+
+                // CLI Push space right here
+
+            }        
+        }
+    }
+}
