@@ -30,7 +30,7 @@ node {
             docker.image("${env.DOCKER_IMAGE_CLI}").inside("--link ${c.id}:docker --privileged -u root") {
                 stage ('Build') {
                     sh """
-                        cd src/docker/app
+                        cd src/app
                         export DOCKER_HOST=tcp://docker:2375
                         docker-compose build
                         docker images
@@ -41,7 +41,7 @@ node {
                 stage ('Upload') {
                      sh """
                         export DOCKER_HOST=tcp://docker:2375
-                        cp -RT src/docker/app /app/src/workspace
+                        cp -RT src/app /app/src/workspace
                         cd /app/src/workspace
                         ie-app-publisher-linux de c -u http://docker:2375
                         export IE_SKIP_CERTIFICATE=true
