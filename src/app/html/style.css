@@ -77,7 +77,7 @@ line {
 
 /* NEUE CSS-Regeln für das Katzenbild */
 #catImage {
-    max-width: 200px; /* Maximale Breite des Bildes, anpassen nach Wunsch */
+    max-width: 400px; /* Maximale Breite des Bildes, anpassen nach Wunsch */
     height: auto; /* Höhe automatisch anpassen, um Proportionen zu erhalten */
     border-radius: 10px; /* Optional: leicht abgerundete Ecken */
     margin-bottom: 20px; /* Abstand zwischen Bild und Überschrift */
