@@ -52,7 +52,7 @@ node {
                 }  
 
                 // CLI Push space right here
-                // push again??
+                // To my knowledge the edge CLI is deprecated. I believe the CLI has been replaced with an API. I need to do more reading though.
             }        
         }
     }
