@@ -66,6 +66,7 @@ stage ('Deploy to Device') {
              -H "Content-Type: application/json" \\
              -d '{"username":"$USER_NAME","password":"$PSWD"}' \\
              --insecure \\
+             -L \\  // <--- DIESE ZEILE HINZUFÜGEN, um Umleitungen zu folgen
              "$IEM_URL/api/v1/auth/login")
 
         echo "--- Raw CURL Response ---"
