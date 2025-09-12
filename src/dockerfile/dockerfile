@@ -10,4 +10,3 @@ RUN apt-get update && apt-get install -y jq && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /app/src/workspace
 WORKDIR /app/src/workspace
-RUN ie-app-publisher-linux ws init
