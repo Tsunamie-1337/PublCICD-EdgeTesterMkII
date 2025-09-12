@@ -60,13 +60,25 @@ stage ('Deploy to Device') {
     sh """
         # 1. Get Access Token
         # Den gesamten JSON-Payload in einfache Anführungszeichen setzen
-        IEM_TOKEN=\$(curl -s -X POST -H "Content-Type: application/json" \\
+        # Die Ausgabe von curl in eine Variable speichern und ausgeben
+        
+        CURL_RESPONSE=\$(curl -s -X POST \\
+             -H "Content-Type: application/json" \\
              -d '{"username":"$USER_NAME","password":"$PSWD"}' \\
              --insecure \\
-             "$IEM_URL/api/v1/auth/login" | jq -r .token)
+             "$IEM_URL/api/v1/auth/login")
+
+        echo "--- Raw CURL Response ---"
+        echo "\$CURL_RESPONSE"
+        echo "-------------------------"
+
+        # Jetzt versuchen, den Token aus der Antwort zu extrahieren
+        IEM_TOKEN=\$(echo "\$CURL_RESPONSE" | jq -r .token)
 
         if [ -z "\$IEM_TOKEN" ]; then
-            echo "Failed to get IEM token. Check credentials and IEM URL/certificate."
+            echo "Failed to get IEM token. Check credentials, IEM URL/certificate, or CURL response."
+            # Wenn IEM_TOKEN leer ist, könnte es sein, dass jq keinen Token gefunden hat oder die Antwort kein JSON war.
+            # Die Raw CURL Response sollte uns mehr Aufschluss geben.
             exit 1
         fi
 
