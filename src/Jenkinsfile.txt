@@ -58,28 +58,29 @@ node {
                                 /* Deploy to given edge device */
 stage ('Deploy to Device') {
     sh """
+        set -x # Debug-Ausgabe aktivieren, um jeden Befehl zu sehen
+
         # 1. Get Access Token
-        # Den gesamten JSON-Payload in einfache Anführungszeichen setzen
-        # Die Ausgabe von curl in eine Variable speichern und ausgeben
-        
-        CURL_RESPONSE=\$(curl -s -X POST \\
+        # Ausgabe von curl in eine temporäre Datei umleiten
+        CURL_OUTPUT_FILE="curl_response.txt"
+        curl -s -X POST \\
              -H "Content-Type: application/json" \\
              -d '{"username":"$USER_NAME","password":"$PSWD"}' \\
              --insecure \\
-             -L \\  // <--- DIESE ZEILE HINZUFÜGEN, um Umleitungen zu folgen
-             "$IEM_URL/api/v1/auth/login")
+             -L \\
+             "$IEM_URL/api/v1/auth/login" > "\$CURL_OUTPUT_FILE" 2>&1 # Ausgabe in Datei umleiten
 
-        echo "--- Raw CURL Response ---"
-        echo "\$CURL_RESPONSE"
-        echo "-------------------------"
+        echo "--- Raw CURL Response (from file) ---"
+        cat "\$CURL_OUTPUT_FILE" # Inhalt der Datei ausgeben
+        echo "-------------------------------------"
 
-        # Jetzt versuchen, den Token aus der Antwort zu extrahieren
-        IEM_TOKEN=\$(echo "\$CURL_RESPONSE" | jq -r .token)
+        # Jetzt versuchen, den Token aus dem Inhalt der Datei zu extrahieren
+        IEM_TOKEN=\$(cat "\$CURL_OUTPUT_FILE" | jq -r .token)
 
         if [ -z "\$IEM_TOKEN" ]; then
             echo "Failed to get IEM token. Check credentials, IEM URL/certificate, or CURL response."
             # Wenn IEM_TOKEN leer ist, könnte es sein, dass jq keinen Token gefunden hat oder die Antwort kein JSON war.
-            # Die Raw CURL Response sollte uns mehr Aufschluss geben.
+            # Die Raw CURL Response im Log wird uns mehr Aufschluss geben.
             exit 1
         fi
 
