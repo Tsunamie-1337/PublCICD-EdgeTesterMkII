@@ -55,7 +55,7 @@ node {
                 // Erst Waittimer dann der CLI push auf das IEVD
                 //CLI Doku ist unter der edge doku schau im dateibau links und durchblaettern
 
-                                /* Deploy to given edge device */
+                                /* Deploy to given edge device 
                 stage ('Deploy to Device') {
     sh """
         # 1. Get Access Token
@@ -101,7 +101,7 @@ node {
 
         echo "Deployment triggered for device \$DEVICE_ID with app $APP_ID version \$APP_VERSION"
     """
-                } 
+                } */
 
             }        
         }
