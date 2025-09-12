@@ -54,6 +54,55 @@ node {
                 //Moeglich CLI Schnittstelle fuer automatischen Upload einzubauen.
                 // Erst Waittimer dann der CLI push auf das IEVD
                 //CLI Doku ist unter der edge doku schau im dateibau links und durchblaettern
+
+                                /* Deploy to given edge device */
+                stage ('Deploy to Device') {
+    sh """
+        # 1. Get Access Token
+        # Use single quotes around the JSON payload to prevent shell interpretation
+        # Use -k or --insecure if your IEM uses a self-signed certificate and curl needs to bypass verification
+        IEM_TOKEN=\$(curl -s -X POST -H "Content-Type: application/json" \\
+             -d '{"username":"$USER_NAME","password":"$PSWD"}' \\
+             --insecure \\
+             "$IEM_URL/api/v1/auth/login" | jq -r .token)
+
+        if [ -z "\$IEM_TOKEN" ]; then
+            echo "Failed to get IEM token. Check credentials and IEM URL/certificate."
+            exit 1
+        fi
+
+        echo "Successfully obtained IEM token."
+
+        # 2. Find Device ID (example, replace with actual IEM API call)
+        # This needs to be fetched dynamically or configured.
+        # Example: DEVICE_ID=\$(curl -s -H "Authorization: Bearer \$IEM_TOKEN" "$IEM_URL/api/v1/devices?name=MyEdgeDevice" | jq -r '.[0].id')
+        DEVICE_ID="529662ec59c247e29812a8f2dd824640" # <<< ERSETZE DIES MIT DER ECHTEN GERÄTE-ID ODER HOL SIE DYNAMISCH
+
+        # 3. Find App ID and Version (you already have APP_ID and BUILD_NUMBER)
+        APP_VERSION="0.0.$BUILD_NUMBER"
+
+        # 4. Create/Update Deployment (example, replace with actual IEM API call)
+        # This is the most complex part, as it involves creating a deployment plan
+        # or assigning the app to the device.
+        # You would typically send a POST request to an endpoint like /api/v1/deployments
+        # with a JSON payload specifying the device, app, and version.
+
+        # Example: Triggering a deployment (highly simplified and conceptual)
+        curl -X POST -H "Authorization: Bearer \$IEM_TOKEN" \\
+             -H "Content-Type: application/json" \\
+             -d '{
+                   "deviceId": "\$DEVICE_ID",
+                   "applicationId": "$APP_ID",
+                   "applicationVersion": "\$APP_VERSION",
+                   "action": "deploy"
+                 }' \\
+             --insecure \\
+             "$IEM_URL/api/v1/deployments"
+
+        echo "Deployment triggered for device \$DEVICE_ID with app $APP_ID version \$APP_VERSION"
+    """
+                }
+
             }        
         }
     }
