@@ -1,8 +1,9 @@
 FROM ubuntu:22.04
 	
 RUN apt-get update
-	
+
 COPY ie-app-publisher-linux /usr/bin
+RUN chmod +x /usr/bin/ie-app-publisher-linux
 
 RUN apt-get install -y curl gnupg2 pass
 RUN curl -sSL https://get.docker.com/ | sh
