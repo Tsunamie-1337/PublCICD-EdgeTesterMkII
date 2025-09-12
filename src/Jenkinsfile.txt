@@ -56,11 +56,10 @@ node {
                 //CLI Doku ist unter der edge doku schau im dateibau links und durchblaettern
 
                                 /* Deploy to given edge device */
-                stage ('Deploy to Device') {
+stage ('Deploy to Device') {
     sh """
         # 1. Get Access Token
-        # Use single quotes around the JSON payload to prevent shell interpretation
-        # Use -k or --insecure if your IEM uses a self-signed certificate and curl needs to bypass verification
+        # Den gesamten JSON-Payload in einfache Anführungszeichen setzen
         IEM_TOKEN=\$(curl -s -X POST -H "Content-Type: application/json" \\
              -d '{"username":"$USER_NAME","password":"$PSWD"}' \\
              --insecure \\
@@ -101,7 +100,9 @@ node {
 
         echo "Deployment triggered for device \$DEVICE_ID with app $APP_ID version \$APP_VERSION"
     """
-                } //*/
+}
+
+ //*/
 
             }        
         }
