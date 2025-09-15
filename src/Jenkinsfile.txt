@@ -85,12 +85,11 @@ stage('Deploy to Device') {
             BASE_URL="$IEM_URL"
 
             curl -i -X POST \
-                -H "Authorization: Bearer $IEM_TOKEN" \
-                -H "Content-Type:multipart/form-data" \
-                -F "infoMap={\\"devices\\":[\\"$EDGE_DEVICE_ID\\"]}" \
-                --insecure \
-                "$BASE_URL/portal/api/v1/batches?appid=$APP_ID&operation=installApplication" \
-                > "$DEPLOY_OUTPUT" 2>&1
+            -H "Authorization: Bearer $IEM_TOKEN" \
+            -H "Content-Type:multipart/form-data" \
+            -F "infoMap={\"devices\":[\"$EDGE_DEVICE_ID\"]}" \
+            --insecure \
+            "$IEM_URL/portal/api/v1/batches?appid=$APP_ID&operation=installApplication"
 
             STATUS=$(grep HTTP "$DEPLOY_OUTPUT" | tail -1 | awk '{print $2}')
             echo "Deployment HTTP-Status: $STATUS"
