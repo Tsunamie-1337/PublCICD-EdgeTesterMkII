@@ -58,7 +58,7 @@ node {
                                 /* Deploy to given edge device */
 stage ('Deploy to Device') {
     sh """
-        set -x # Debug-Ausgabe aktivieren (kann entfernt werden, wenn alles funktioniert)
+       set -x # Debug-Ausgabe aktivieren (kann entfernt werden, wenn alles funktioniert)
 
         # Konfiguriere die Basis-URL deines IEM
         IEM_BASE_URL="https://192.168.56.4:443"
@@ -106,7 +106,6 @@ stage ('Deploy to Device') {
 
         # --- SCHRITT 2: Industrial Edge Application ID verwenden ---
         # Die APP_ID wird bereits in der Pipeline gesetzt
-        # (z.B. APP_ID="9bb74e569f1340e2972d1b0689fe3973")
         echo "Using Application ID: \$APP_ID"
 
 
@@ -124,14 +123,13 @@ stage ('Deploy to Device') {
         # --- SCHRITT 5: Anwendung auf dem Edge Device deployen ---
         echo "--- Attempting to deploy application \$APP_ID version \$APP_VERSION to device \$DEVICE_ID ---"
         
-        # Konstruiere den infoMap JSON-String separat und sorge für korrektes Quoting
-        # Die inneren doppelten Anführungszeichen müssen escaped werden, wenn der ganze String in doppelten Anführungszeichen ist
-        INFOMAP_JSON="{\\"devices\\":[\\"\$DEVICE_ID\\"]}"
-        
+        # Korrigierter infoMap-Parameter:
+        # Der gesamte Wert für -F muss in einfachen Anführungszeichen stehen,
+        # und die DEVICE_ID wird korrekt in den JSON-String eingefügt.
         DEPLOYMENT_RESPONSE=\$(curl -s -X POST \\
                                     -H "Authorization: Bearer \$IEM_TOKEN" \\
                                     -H "Content-Type:multipart/form-data" \\
-                                    -F "infoMap=\${INFOMAP_JSON}" \\ # <-- HIER WURDE INFOMAP_JSON KORREKT ÜBERGEBEN
+                                    -F 'infoMap={"devices":["'"\$DEVICE_ID"'"]}' \\ # <--- KORRIGIERTE ZEILE
                                     --insecure \\
                                     "\$IEM_BASE_URL/portal/api/v1/batches?appid=\$APP_ID&operation=installApplication&version=\$APP_VERSION")
         
@@ -148,6 +146,7 @@ stage ('Deploy to Device') {
 
         # Optional: Überprüfe die Deployment-Antwort auf Erfolg oder Status
         echo "Application deployment request sent successfully."
+
 
     """
 }
