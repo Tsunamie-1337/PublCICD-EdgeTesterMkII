@@ -116,7 +116,7 @@ node {
 
                             # --- KORRIGIERTER DIAGNOSE-SCHRITT: Verfügbare App-Versionen im IEM prüfen ---
                             echo "--- Verifying App Version \$APP_VERSION in IEM (with 5s delay) ---"
-                            sleep 5 # Gib IEM ein paar Sekunden Zeit, um den Upload zu verarbeiten (zusätzlich zum sleep in Upload-Stage)
+                            sleep 5 # Gib IEM ein paar Sekunden Zeit, um den Publish zu verarbeiten (zusätzlich zum sleep in Upload-Stage)
 
                             # KORRIGIERTER ENDPUNKT: /portal/api/v1/applications/$APP_ID
                             APP_DETAILS_RESPONSE=\$(curl -s -H "Authorization: Bearer \$IEM_TOKEN" \\
@@ -129,7 +129,6 @@ node {
                             echo "------------------------------------------------"
 
                             # KORRIGIERTER JQ-FILTER: Navigiert zu .appVersions[] und prüft .versionNumber
-                            # Wichtig: Die Versionsnummer muss als String in jq verglichen werden.
                             VERSION_EXISTS=\$(echo "\$APP_DETAILS_RESPONSE" | jq -r '.appVersions[] | select(.versionNumber=="'"\$APP_VERSION"'") | .versionNumber')
                             
                             if [ -z "\$VERSION_EXISTS" ] || [ "\$VERSION_EXISTS" == "null" ]; then
