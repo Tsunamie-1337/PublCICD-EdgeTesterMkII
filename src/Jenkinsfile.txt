@@ -111,7 +111,7 @@ node {
                             echo "-------------------------------------------------------------------"
 
                             # Überprüfen, ob die gewünschte Version und ihr Status vorhanden sind
-                            VERSION_STATUS=\$(echo "\$APP_DETAILS_CLI_RESPONSE" | jq -r '.Versions[] | select(.versionNumber=="'"\$APP_VERSION"'") | .status')
+                            VERSION_STATUS=\$(echo "\$APP_DETAILS_CLI_RESPONSE" | jq -r '.versions[] | select(.versionNumber=="'"\$APP_VERSION"'") | .status')
 
                             if [ -z "\$VERSION_STATUS" ] || [ "\$VERSION_STATUS" == "null" ]; then
                                 echo "ERROR: App version \$APP_VERSION not found in app details or has no status."
