@@ -61,7 +61,6 @@ stage ('Deploy to Device') {
         set -x # Debug-Ausgabe aktivieren (kann entfernt werden, wenn alles funktioniert)
 
         # Konfiguriere die Basis-URL deines IEM
-        # Stelle sicher, dass dies die korrekte IP/Hostname und der Port (z.B. 443) ist.
         IEM_BASE_URL="https://192.168.56.4:443"
 
         # Definition des Authentifizierungs-Endpunkts
@@ -107,13 +106,14 @@ stage ('Deploy to Device') {
 
         # --- SCHRITT 2: Industrial Edge Application ID verwenden ---
         # Die APP_ID wird bereits in der Pipeline gesetzt
+        # (z.B. APP_ID="9bb74e569f1340e2972d1b0689fe3973")
         echo "Using Application ID: \$APP_ID"
 
 
-        # --- SCHRITT 3: Device ID statisch setzen ---
-        # Ersetze <YOUR_KNOWN_DEVICE_ID> durch die tatsächliche ID deines Edge-Geräts.
-        DEVICE_ID="$EDGE_DEVICE_ID" # <-- HIER DEINE BEKANNTE DEVICE ID EINFÜGEN
-        echo "Using static Device ID: \$DEVICE_ID"
+        # --- SCHRITT 3: Device ID verwenden ---
+        # Die EDGE_DEVICE_ID ist jetzt eine Variable
+        DEVICE_ID="\$EDGE_DEVICE_ID" # <-- VERWENDET DIE VARIABLE $EDGE_DEVICE_ID
+        echo "Using Device ID: \$DEVICE_ID"
 
         # --- SCHRITT 4: Anwendungsversion definieren ---
         # Die APP_VERSION wird aus der Jenkins BUILD_NUMBER abgeleitet, wie im Upload-Schritt
@@ -123,10 +123,15 @@ stage ('Deploy to Device') {
 
         # --- SCHRITT 5: Anwendung auf dem Edge Device deployen ---
         echo "--- Attempting to deploy application \$APP_ID version \$APP_VERSION to device \$DEVICE_ID ---"
+        
+        # Konstruiere den infoMap JSON-String separat und sorge für korrektes Quoting
+        # Die inneren doppelten Anführungszeichen müssen escaped werden, wenn der ganze String in doppelten Anführungszeichen ist
+        INFOMAP_JSON="{\\"devices\\":[\\"\$DEVICE_ID\\"]}"
+        
         DEPLOYMENT_RESPONSE=\$(curl -s -X POST \\
                                     -H "Authorization: Bearer \$IEM_TOKEN" \\
                                     -H "Content-Type:multipart/form-data" \\
-                                    -F "infoMap={\"devices\":[\"\$DEVICE_ID\"]}" \\
+                                    -F "infoMap=\${INFOMAP_JSON}" \\ # <-- HIER WURDE INFOMAP_JSON KORREKT ÜBERGEBEN
                                     --insecure \\
                                     "\$IEM_BASE_URL/portal/api/v1/batches?appid=\$APP_ID&operation=installApplication&version=\$APP_VERSION")
         
@@ -143,6 +148,7 @@ stage ('Deploy to Device') {
 
         # Optional: Überprüfe die Deployment-Antwort auf Erfolg oder Status
         echo "Application deployment request sent successfully."
+
     """
 }
 
