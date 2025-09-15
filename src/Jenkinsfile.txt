@@ -46,13 +46,11 @@ node {
                         ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
                         ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
                         
-                        # KORRIGIERTER BEFEHL: ie-app-publisher-linux em app pv ohne -a und -v
-                        echo "Attempting to publish app version via ie-app-publisher-linux em app pv..."
-                        ie-app-publisher-linux em app pv # <-- KORRIGIERTE ZEILE
-                        echo "Publish command executed. Waiting for IEM to process..."
+                        # ENTFERNT: ie-app-publisher-linux em app pv (da es 'unknown option -a' Fehler verursacht)
+                        # Die App-Version sollte nach uuv in der UI sichtbar sein.
                         
-                        echo "Waiting 15 seconds for IEM to process the upload and publish..."
-                        sleep 15
+                        echo "Waiting 15 seconds for IEM to process the upload..."
+                        sleep 15 # Wartezeit nach dem Upload
                      """
                 }  
 
@@ -67,7 +65,7 @@ node {
                             set -x # Debug-Ausgabe aktivieren (kann entfernt werden, wenn alles funktioniert)
 
                             # NEUE ZEILE: IE_SKIP_CERTIFICATE für diese Shell-Session setzen
-                            export IE_SKIP_CERTIFICATE=true # <-- HINZUGEFÜGT
+                            export IE_SKIP_CERTIFICATE=true
 
                             # Konfiguriere die Basis-URL deines IEM
                             IEM_BASE_URL="https://192.168.56.4:443"
@@ -121,26 +119,34 @@ node {
                             echo "Attempting to deploy Application Version: \$APP_VERSION"
 
 
-                            # --- NEUER DIAGNOSE-SCHRITT: App-Version Status über CLI abfragen ---
-                            # Dies ist der zuverlässigste Weg, den Status der Version zu prüfen.
-                            echo "--- Verifying App Version Status via ie-app-publisher-linux CLI ---"
+                            # --- KORRIGIERTER DIAGNOSE-SCHRITT: App-Details über CLI abfragen ---
+                            echo "--- Verifying App Version Status via ie-app-publisher-linux em app detail ---"
                             # Login mit dem CLI-Tool, da jeder sh-Block eine neue Shell-Session ist
-                            ie-app-publisher-linux em li -u "\$IEM_BASE_URL" -e "\$USER_NAME" -p "\$PSWD" # <-- SOLLTE JETZT FUNKTIONIEREN
+                            ie-app-publisher-linux em li -u "\$IEM_BASE_URL" -e "\$USER_NAME" -p "\$PSWD"
                             
-                            # App-Version Details abrufen
-                            # Wir gehen davon aus, dass -a und -v hier funktionieren, da es der Standardweg ist.
-                            # Wenn nicht, müssten wir den Output von 'ie-app-publisher-linux em app lv' ohne Parameter parsen.
-                            APP_VERSION_CLI_DETAILS=\$(ie-app-publisher-linux em app lv -a "\$APP_ID" -v "\$APP_VERSION")
-                            echo "Raw App Version CLI Details:"
-                            echo "\$APP_VERSION_CLI_DETAILS"
+                            # App-Details abrufen (sollte JSON zurückgeben)
+                            # Wir verwenden 'detail -a' Option, da es die logischste Wahl ist.
+                            APP_DETAILS_CLI_RESPONSE=\$(ie-app-publisher-linux em app detail -a "\$APP_ID")
+                            echo "Raw App Details CLI Response:"
+                            echo "\$APP_DETAILS_CLI_RESPONSE" | jq . # Pretty print the JSON
                             echo "-------------------------------------------------------------------"
 
-                            # Überprüfen, ob der Status "Published" oder "Released" ist
-                            if ! echo "\$APP_VERSION_CLI_DETAILS" | grep -q "Status: Published" && ! echo "\$APP_VERSION_CLI_DETAILS" | grep -q "Status: Released" && ! echo "\$APP_VERSION_CLI_DETAILS" | grep -q "Status: Reviewed"; then
-                                echo "ERROR: App version \$APP_VERSION is not in a deployable state (Published/Released/Reviewed) according to CLI."
+                            # Überprüfen, ob die gewünschte Version und ihr Status vorhanden sind
+                            # Der jq-Filter muss die JSON-Struktur des 'detail'-Outputs kennen
+                            VERSION_STATUS=\$(echo "\$APP_DETAILS_CLI_RESPONSE" | jq -r '.appVersions[] | select(.versionNumber=="'"\$APP_VERSION"'") | .status')
+
+                            if [ -z "\$VERSION_STATUS" ] || [ "\$VERSION_STATUS" == "null" ]; then
+                                echo "ERROR: App version \$APP_VERSION not found in app details or has no status."
+                                echo "This is unexpected. Check IEM UI for version details."
                                 exit 1
+                            else
+                                echo "Confirmed: Version \$APP_VERSION found in IEM with status: \$VERSION_STATUS"
+                                # Hier kannst du prüfen, ob der Status "Published" oder "Reviewed" ist
+                                if ! echo "\$VERSION_STATUS" | grep -qE "Published|Reviewed|Released"; then
+                                    echo "WARNING: App version \$APP_VERSION is not in a deployable state (Published/Reviewed/Released)."
+                                    exit 1
+                                fi
                             fi
-                            echo "Confirmed: App version \$APP_VERSION is in a deployable state."
 
 
                             # --- SCHRITT 5: Anwendung auf dem Edge Device deployen ---
