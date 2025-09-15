@@ -63,11 +63,11 @@ stage ('Deploy to Device') {
         # Korrekte IEM URL mit Port 9443 und dem richtigen Endpunkt
         # Annahme: Dein IEM_URL ist derzeit "https://192.168.56.4:443"
         # Wir müssen den Port und den Pfad anpassen.
-        # Ersetze $IEM_URL durch die korrekte URL aus der Doku, z.B. "https://192.168.56.4:9443"
+        # Ersetze $IEM_URL durch die korrekte URL aus der Doku, z.B. "https://192.168.56.4:443"
         # oder konstruiere sie neu:
-        # IEM_AUTH_URL="https://192.168.56.4:9443/portal/api/v1/login/direct"
+        # IEM_AUTH_URL="https://192.168.56.4:443/portal/api/v1/login/direct"
         # Wenn $IEM_URL bereits den Hostnamen/IP ohne Port enthält, kannst du es so machen:
-        IEM_BASE_URL="https://192.168.56.4:9443" # <-- HIER DEINE KORREKTE IEM IP/HOSTNAME MIT PORT 9443 EINFÜGEN
+        IEM_BASE_URL="https://192.168.56.4:443" # <-- HIER DEINE KORREKTE IEM IP/HOSTNAME MIT PORT 9443 EINFÜGEN
         IEM_AUTH_URL="\$IEM_BASE_URL/portal/api/v1/login/direct"
 
         CURL_OUTPUT_FILE="curl_response.txt"
