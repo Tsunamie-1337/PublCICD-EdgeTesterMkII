@@ -81,6 +81,22 @@ stage('Deploy to Device') {
 
             DEPLOY_OUTPUT="deploy_curl_response.txt"
 
+
+
+                        # Warteschleife 1-2 Minuten (maximal 18*10s = 3 Minuten)
+                        echo "Warte, bis neue App-Version im Status 'PUBLISHED' oder 'RELEASED' ist ..."
+                        for i in {1..18}; do
+                        STATUS=$(ie-app-publisher-linux em app detail -a "$APP_ID" | jq -r '.versions[] | select(.versionNumber=="'$VERSION'") | .status')
+                        echo "Version $VERSION Status: $STATUS"
+                        if [ "$STATUS" = "PUBLISHED" ] || [ "$STATUS" = "RELEASED" ]; then
+                            echo "Version $VERSION ist $STATUS! Deployment wird gestartet."
+                            break
+                        fi
+                        sleep 10
+                        done
+
+
+
             curl -i -X POST \
                 -H "Authorization: Bearer $IEM_TOKEN" \
                 -H "Content-Type:multipart/form-data" \
