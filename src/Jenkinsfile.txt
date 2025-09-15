@@ -56,8 +56,8 @@ node {
                 //CLI Doku ist unter der edge doku schau im dateibau links und durchblaettern
 
                                 /* Deploy to given edge device */
-                stage ('Deploy to Device') {
-                    script {
+stage('Deploy to Device') {
+    script {
         sh '''#!/bin/bash
             set -x
 
@@ -101,6 +101,7 @@ node {
             echo "$APP_DETAILS_CLI_RESPONSE" | jq .
 
             echo "All versions & statuses:"
+            # <<< HIER IST DER WICHTIGE FIX: KEIN BACKSLASH MEHR VOR '(' >>>
             echo "$APP_DETAILS_CLI_RESPONSE" | jq -r '.versions[] | "\(.versionNumber) : \(.status)"'
             echo "-------------------------------------------------------------------"
 
@@ -139,8 +140,8 @@ node {
 
             echo "Application deployment request sent successfully."
         '''
-                    }
-                }
+    }
+}
 
  //*/
             }        
