@@ -47,17 +47,13 @@ node {
                         export IE_SKIP_CERTIFICATE=true
                         ie-app-publisher-linux em li -u "$IEM_URL" -e $USER_NAME -p $PSWD
                         ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
+                        ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
                         
-                        # Veröffentliche die App-Version nach dem Upload
-                        ie-app-publisher-linux em app pv -a $APP_ID -v 0.0.$BUILD_NUMBER
+                        # KORRIGIERTER BEFEHL: ie-app-publisher-linux em app pv ohne -a und -v
+                        ie-app-publisher-linux em app pv # <-- DIESER BEFEHL WURDE KORRIGIERT
                         
                         echo "Waiting 15 seconds for IEM to process the upload and publish..."
-                        sleep 15 # <-- ERHÖHTE WARTEZEIT nach dem Upload und Publish
-                        
-                        # NEUER DIAGNOSE-SCHRITT: App-Version Status über CLI abfragen
-                        echo "--- Verifying App Version Status via ie-app-publisher-linux CLI ---"
-                        ie-app-publisher-linux em app lv -a $APP_ID -v 0.0.$BUILD_NUMBER # Listet Details zu einer spezifischen Version
-                        echo "-------------------------------------------------------------------"
+                        sleep 15
                      """
                 }  
 
@@ -66,7 +62,6 @@ node {
                 //CLI Doku ist unter der edge doku schau im dateibau links und durchblaettern
 
                                 /* Deploy to given edge device */
-/* Deploy to given edge device */
                 stage ('Deploy to Device') {
                     script {
                         sh '''#!/bin/bash
@@ -124,34 +119,25 @@ node {
                             echo "Attempting to deploy Application Version: \$APP_VERSION"
 
 
-                            # --- KORRIGIERTER DIAGNOSE-SCHRITT: Verfügbare App-Versionen über die Liste abfragen ---
-                            echo "--- Verifying App Version \$APP_VERSION in IEM (via full list) ---"
-                            sleep 5 # Gib IEM ein paar Sekunden Zeit, um die App-Details zu aktualisieren
-
-                            # NEUER ENDPUNKT: /portal/api/v1/applications (listet alle Apps auf)
-                            APP_LIST_RESPONSE=\$(curl -s -H "Authorization: Bearer \$IEM_TOKEN" \\
-                                                    -H "Content-Type:application/json" \\
-                                                    --insecure \\
-                                                    "\$IEM_BASE_URL/portal/api/v1/applications")
-
-                            echo "Raw App List Response:"
-                            echo "\$APP_LIST_RESPONSE" | jq . # Pretty print the JSON
-                            echo "------------------------------------------------"
-
-                            # KORRIGIERTER JQ-FILTER: Findet unsere App nach ID und dann die Version innerhalb des appVersions-Arrays
-                            # ACHTUNG: Die API /applications listet die appVersions NICHT auf.
-                            # Wir müssen hier die APP_ID als String vergleichen.
-                            # Der select(.id==...) Teil ist korrekt, aber .appVersions wird hier nicht gefunden.
-                            # Wenn die App in der Liste auftaucht, ist das schon ein Erfolg.
-                            # Wir können hier nur prüfen, ob die APP_ID in der Liste der APPs auftaucht.
-                            APP_ID_IN_LIST=\$(echo "\$APP_LIST_RESPONSE" | jq -r ".data[] | select(.applicationId==\"\$APP_ID\") | .applicationId")
+                            # --- NEUER DIAGNOSE-SCHRITT: App-Version Status über CLI abfragen ---
+                            # Dies ist der zuverlässigste Weg, den Status der Version zu prüfen.
+                            echo "--- Verifying App Version Status via ie-app-publisher-linux CLI ---"
+                            # Login mit dem CLI-Tool, da jeder sh-Block eine neue Shell-Session ist
+                            ie-app-publisher-linux em li -u "\$IEM_BASE_URL" -e "\$USER_NAME" -p "\$PSWD"
                             
-                            if [ -z "\$APP_ID_IN_LIST" ] || [ "\$APP_ID_IN_LIST" == "null" ]; then
-                                echo "ERROR: Application with ID \$APP_ID not found in the global IEM application list."
-                                echo "This is unexpected after successful upload and publish. Check IEM UI for overall app status."
+                            # App-Version Details abrufen
+                            APP_VERSION_CLI_DETAILS=\$(ie-app-publisher-linux em app lv -a "\$APP_ID" -v "\$APP_VERSION")
+                            echo "Raw App Version CLI Details:"
+                            echo "\$APP_VERSION_CLI_DETAILS"
+                            echo "-------------------------------------------------------------------"
+
+                            # Überprüfen, ob der Status "Published" oder "Released" ist
+                            # Basierend auf früheren Logs, die Status wie "Reviewed" zeigten.
+                            if ! echo "\$APP_VERSION_CLI_DETAILS" | grep -q "Status: Published" && ! echo "\$APP_VERSION_CLI_DETAILS" | grep -q "Status: Released" && ! echo "\$APP_VERSION_CLI_DETAILS" | grep -q "Status: Reviewed"; then
+                                echo "ERROR: App version \$APP_VERSION is not in a deployable state (Published/Released/Reviewed) according to CLI."
                                 exit 1
                             fi
-                            echo "Confirmed: Application with ID \$APP_ID exists in IEM global list."
+                            echo "Confirmed: App version \$APP_VERSION is in a deployable state."
 
 
                             # --- SCHRITT 5: Anwendung auf dem Edge Device deployen ---
