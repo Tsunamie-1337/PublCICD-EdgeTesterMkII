@@ -105,29 +105,16 @@ stage ('Deploy to Device') {
         echo "IEM_TOKEN (first 10 chars): \$(echo \$IEM_TOKEN | cut -c 1-10)..."
 
 
-        # --- SCHRITT 2: Industrial Edge Application ID abrufen ---
-        # Ersetze <YOUR_APP_NAME> durch den tatsächlichen Namen deiner Anwendung im IEM
-        echo "--- Attempting to get Application ID ---"
-        APP_ID_RESPONSE=\$(curl -s -H "Authorization: Bearer \$IEM_TOKEN" \\
-                              -H "Content-Type:application/json" \\
-                              --insecure \\
-                              "\$IEM_BASE_URL/portal/api/v1/applications")
-
-        APP_ID=\$(echo "\$APP_ID_RESPONSE" | jq -r '.[] | select(.name=="<CICDTestMkII>") | .id')
-
-        if [ -z "\$APP_ID" ] || [ "\$APP_ID" == "null" ]; then
-            echo "ERROR: Failed to get Application ID for <YOUR_APP_NAME>."
-            echo "Raw application list response: \$APP_ID_RESPONSE"
-            exit 1
-        fi
-        echo "Successfully obtained Application ID: \$APP_ID"
+        # --- SCHRITT 2: Industrial Edge Application ID statisch setzen ---
+        # Die App ID für "CICDTestMkII" ist 9bb74e569f1340e2972d1b0689fe3973
+        APP_ID="9bb74e569f1340e2972d1b0689fe3973" # <-- APP ID hier statisch gesetzt
+        echo "Using static Application ID: \$APP_ID"
 
 
-        # --- SCHRITT 3 (entfällt): Device ID ist bereits bekannt ---
-        # Da du die Device ID bereits kennst, kannst du sie hier direkt setzen.
+        # --- SCHRITT 3: Device ID statisch setzen ---
         # Ersetze <YOUR_KNOWN_DEVICE_ID> durch die tatsächliche ID deines Edge-Geräts.
-        DEVICE_ID="529662ec59c247e29812a8f2dd824640" # <-- HIER DEINE BEKANNTE DEVICE ID EINFÜGEN
-        echo "Using known Device ID: \$DEVICE_ID"
+        DEVICE_ID="<YOUR_KNOWN_DEVICE_ID>" # <-- HIER DEINE BEKANNTE DEVICE ID EINFÜGEN
+        echo "Using static Device ID: \$DEVICE_ID"
 
 
         # --- SCHRITT 4: Anwendung auf dem Edge Device deployen ---
@@ -152,9 +139,7 @@ stage ('Deploy to Device') {
 
         # Optional: Überprüfe die Deployment-Antwort auf Erfolg oder Status
         # Die Doku gibt hier keine spezifische Erfolgsmeldung an,
-        # aber du könntest nach bestimmten Keywords suchen oder den HTTP-Statuscode prüfen,
-        # wenn curl nicht -s wäre und du -w "%{http_code}" verwenden würdest.
-        # Für den Moment gehen wir davon aus, dass ein Exit-Code 0 von curl ausreicht.
+        # aber du könntest nach bestimmten Keywords suchen oder den HTTP-Statuscode prüfen.
         echo "Application deployment request sent successfully."
     """
 }
