@@ -46,8 +46,8 @@ node {
                         ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
                         ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
                         
-                        echo "Waiting 15 seconds for IEM to process the upload..."
-                        sleep 15
+                        echo "Waiting 20 seconds for IEM to process the upload and internal publishing..." # <-- Wartezeit erhöht
+                        sleep 20
                      """
                 }  
 
@@ -101,29 +101,43 @@ node {
                             echo "Attempting to deploy Application Version: \$APP_VERSION"
 
 
-                            # --- DIAGNOSE: Hilfe für ie-app-publisher-linux em app detail ---
-                            echo "--- Getting help for ie-app-publisher-linux em app detail ---"
+                            # --- DIAGNOSE: App-Details über CLI abfragen ---
+                            echo "--- Verifying App Details via ie-app-publisher-linux em app detail -a \$APP_ID ---"
                             ie-app-publisher-linux em li -u "\$IEM_BASE_URL" -e "\$USER_NAME" -p "\$PSWD" # Login für CLI
-                            ie-app-publisher-linux em app detail --help # <-- NEUER BEFEHL
+                            
+                            APP_DETAILS_CLI_RESPONSE=\$(ie-app-publisher-linux em app detail -a "\$APP_ID")
+                            echo "Raw App Details CLI Response:"
+                            echo "\$APP_DETAILS_CLI_RESPONSE" | jq . # Pretty print the JSON
                             echo "-------------------------------------------------------------------"
 
-                            # --- DIAGNOSE: Hilfe für ie-app-publisher-linux em app ---
-                            echo "--- Getting help for ie-app-publisher-linux em app ---"
-                            ie-app-publisher-linux em app --help # <-- NEUER BEFEHL
-                            echo "-------------------------------------------------------------------"
+                            # Überprüfen, ob die gewünschte Version und ihr Status vorhanden sind
+                            VERSION_STATUS=\$(echo "\$APP_DETAILS_CLI_RESPONSE" | jq -r '.appVersions[] | select(.versionNumber=="'"\$APP_VERSION"'") | .status')
+
+                            if [ -z "\$VERSION_STATUS" ] || [ "\$VERSION_STATUS" == "null" ]; then
+                                echo "ERROR: App version \$APP_VERSION not found in app details or has no status."
+                                echo "This is unexpected. Check IEM UI for version details."
+                                exit 1
+                            else
+                                echo "Confirmed: Version \$APP_VERSION found in IEM with status: \$VERSION_STATUS"
+                                if ! echo "\$VERSION_STATUS" | grep -qE "Published|Reviewed|Released"; then
+                                    echo "WARNING: App version \$APP_VERSION is not in a deployable state (Published/Reviewed/Released)."
+                                    exit 1
+                                fi
+                            fi
+
 
                             # --- SCHRITT 5: Anwendung auf dem Edge Device deployen ---
                             echo "--- Attempting to deploy application \$APP_ID version \$APP_VERSION to device \$DEVICE_ID ---"
                             
                             DEPLOY_CURL_OUTPUT_FILE="deploy_curl_response.txt"
 
-                            # KORRIGIERTER CURL-BEFEHL: OHNE &version=\$APP_VERSION PARAMETER
+                            # KORRIGIERTER CURL-BEFEHL: &version=\$APP_VERSION WIEDER HINZUGEFÜGT
                             curl -s -X POST \\
                                                 -H "Authorization: Bearer \$IEM_TOKEN" \\
                                                 -H "Content-Type:multipart/form-data" \\
                                                 -F 'infoMap={"devices":["'"\$DEVICE_ID"'"]}' \\
                                                 --insecure \\
-                                                "\$IEM_BASE_URL/portal/api/v1/batches?appid=\$APP_ID&operation=installApplication" > "\$DEPLOY_CURL_OUTPUT_FILE" 2>&1 # <-- &version=\$APP_VERSION ENTFERNT
+                                                "\$IEM_BASE_URL/portal/api/v1/batches?appid=\$APP_ID&operation=installApplication&version=\$APP_VERSION" > "\$DEPLOY_CURL_OUTPUT_FILE" 2>&1 # <-- &version=\$APP_VERSION WIEDER HINZUGEFÜGT
                             
                             CURL_EXIT_CODE=\$?
                             if [ "\$CURL_EXIT_CODE" -ne 0 ]; then
