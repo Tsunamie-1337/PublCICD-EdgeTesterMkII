@@ -105,26 +105,30 @@ stage ('Deploy to Device') {
         echo "IEM_TOKEN (first 10 chars): \$(echo \$IEM_TOKEN | cut -c 1-10)..."
 
 
-        # --- SCHRITT 2: Industrial Edge Application ID statisch setzen ---
-        # Die App ID für "CICDTestMkII" ist 9bb74e569f1340e2972d1b0689fe3973
-        APP_ID="9bb74e569f1340e2972d1b0689fe3973" # <-- APP ID hier statisch gesetzt
-        echo "Using static Application ID: \$APP_ID"
+        # --- SCHRITT 2: Industrial Edge Application ID verwenden ---
+        # Die APP_ID wird bereits in der Pipeline gesetzt
+        echo "Using Application ID: \$APP_ID"
 
 
         # --- SCHRITT 3: Device ID statisch setzen ---
         # Ersetze <YOUR_KNOWN_DEVICE_ID> durch die tatsächliche ID deines Edge-Geräts.
-        DEVICE_ID="529662ec59c247e29812a8f2dd824640" # <-- HIER DEINE BEKANNTE DEVICE ID EINFÜGEN
+        DEVICE_ID="$EDGE_DEVICE_ID" # <-- HIER DEINE BEKANNTE DEVICE ID EINFÜGEN
         echo "Using static Device ID: \$DEVICE_ID"
 
+        # --- SCHRITT 4: Anwendungsversion definieren ---
+        # Die APP_VERSION wird aus der Jenkins BUILD_NUMBER abgeleitet, wie im Upload-Schritt
+        APP_VERSION="0.0.\$BUILD_NUMBER" # <-- Verwendet BUILD_NUMBER aus Jenkins
+        echo "Using Application Version: \$APP_VERSION"
 
-        # --- SCHRITT 4: Anwendung auf dem Edge Device deployen ---
-        echo "--- Attempting to deploy application \$APP_ID to device \$DEVICE_ID ---"
+
+        # --- SCHRITT 5: Anwendung auf dem Edge Device deployen ---
+        echo "--- Attempting to deploy application \$APP_ID version \$APP_VERSION to device \$DEVICE_ID ---"
         DEPLOYMENT_RESPONSE=\$(curl -s -X POST \\
                                     -H "Authorization: Bearer \$IEM_TOKEN" \\
                                     -H "Content-Type:multipart/form-data" \\
                                     -F "infoMap={\"devices\":[\"\$DEVICE_ID\"]}" \\
                                     --insecure \\
-                                    "\$IEM_BASE_URL/portal/api/v1/batches?appid=\$APP_ID&operation=installApplication")
+                                    "\$IEM_BASE_URL/portal/api/v1/batches?appid=\$APP_ID&operation=installApplication&version=\$APP_VERSION")
         
         DEPLOYMENT_EXIT_CODE=\$?
         if [ "\$DEPLOYMENT_EXIT_CODE" -ne 0 ]; then
@@ -138,8 +142,6 @@ stage ('Deploy to Device') {
         echo "-------------------------------"
 
         # Optional: Überprüfe die Deployment-Antwort auf Erfolg oder Status
-        # Die Doku gibt hier keine spezifische Erfolgsmeldung an,
-        # aber du könntest nach bestimmten Keywords suchen oder den HTTP-Statuscode prüfen.
         echo "Application deployment request sent successfully."
     """
 }
