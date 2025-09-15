@@ -36,6 +36,9 @@ node {
                     """
                 }
                 // Push the image to the registry
+
+/*
+
                 stage ('Upload') {
                      sh """
                         export DOCKER_HOST=tcp://docker:2375
@@ -52,24 +55,21 @@ node {
                      """
                 }  
 
-                //Moeglich CLI Schnittstelle fuer automatischen Upload einzubauen.
-                // Erst Waittimer dann der CLI push auf das IEVD
-                //CLI Doku ist unter der edge doku schau im dateibau links und durchblaettern
+*/
 
-                                /* Deploy to given edge device */
 stage('Deploy to Device') {
     script {
         sh '''
             set -e
 
-            # diese nehmen wir jetzt aus deinem Env
+            # Diese Variablen müssen im Jenkins Env gesetzt sein!
             echo "APP_ID=$APP_ID"
             echo "EDGE_DEVICE_ID=$EDGE_DEVICE_ID"
             echo "USER_NAME=$USER_NAME"
             echo "PSWD=<hidden>"
             echo "IEM_URL=$IEM_URL"
 
-            # Hol dir das Token per API-Login
+            # API-Login für Token
             IEM_TOKEN=$(curl -s -X POST \
                 -H "Content-Type: application/json" \
                 -d '{"username":"'"$USER_NAME"'","password":"'"$PSWD"'"}' \
@@ -81,15 +81,29 @@ stage('Deploy to Device') {
                 exit 2
             fi
 
+            # Konfiguration ermitteln (alternativ als ENV bereitstellen)
+            CONFIG_API_URL="$IEM_URL/portal/api/v1/applications/$APP_ID/configs"
+            CONFIG_JSON=$(curl -s -H "Authorization: Bearer $IEM_TOKEN" --insecure "$CONFIG_API_URL")
+            CONFIG_ID=$(echo "$CONFIG_JSON" | jq -r '.[0].id')
+            CONFIG_VERSION_ID=$(echo "$CONFIG_JSON" | jq -r '.[0].versions[0].id')
+
+            echo "CONFIG_ID: $CONFIG_ID"
+            echo "CONFIG_VERSION_ID: $CONFIG_VERSION_ID"
+
+            if [ -z "$CONFIG_ID" ] || [ -z "$CONFIG_VERSION_ID" ]; then
+                echo "ERROR: Failed to get configId or versionId"
+                exit 3
+            fi
+
             DEPLOY_OUTPUT="deploy_curl_response.txt"
-            BASE_URL="$IEM_URL"
 
             curl -i -X POST \
-            -H "Authorization: Bearer $IEM_TOKEN" \
-            -H "Content-Type:multipart/form-data" \
-            -F "infoMap={\"devices\":[\"$EDGE_DEVICE_ID\"]}" \
-            --insecure \
-            "$IEM_URL/portal/api/v1/batches?appid=$APP_ID&operation=installApplication"
+                -H "Authorization: Bearer $IEM_TOKEN" \
+                -H "Content-Type:multipart/form-data" \
+                -F "infoMap={\\\"configs\\\":[{\\\"configId\\\":\\\"$CONFIG_ID\\\",\\\"versionId\\\":\\\"$CONFIG_VERSION_ID\\\"}],\\\"devices\\\":[\\\"$EDGE_DEVICE_ID\\\"]}" \
+                --insecure \
+                "$IEM_URL/portal/api/v1/batches?appid=$APP_ID&operation=installApplication" \
+                > "$DEPLOY_OUTPUT" 2>&1
 
             STATUS=$(grep HTTP "$DEPLOY_OUTPUT" | tail -1 | awk '{print $2}')
             echo "Deployment HTTP-Status: $STATUS"
@@ -103,7 +117,6 @@ stage('Deploy to Device') {
     }
 }
 
- //*/
             }        
         }
     }
