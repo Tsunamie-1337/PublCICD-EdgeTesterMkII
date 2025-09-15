@@ -9,20 +9,17 @@ node {
 
                 for (int i = 0; i < 60; i++) {
                     try {
-                        // Tries to connect to the Dind-Daemon
-                        // 'localhost:2375' is the port where the Docker daemon is exposed. Look at line 4
-                        // '> /dev/null 2>&1' redircets output to avoid cluttering the logs
                         sh "docker --host tcp://localhost:2376 info > /dev/null 2>&1"
                         echo "Dind-Daemon is ready!"
                         dindReady = true
                         break 
-                    } catch (Exception e) {//Dind-Daemon wasn't ready for another second
+                    } catch (Exception e) {
                         echo "Dind-Daemon is not ready yet, trying again in 1 second... (${i+1}/60)"
                         sleep 1 
                     }
                 }
 
-                if (!dindReady) { // throws error if dind is not ready after 60 seconds
+                if (!dindReady) {
                     error "Dind-Daemon is not ready in the expected timeframe."
                 }
             }
@@ -50,7 +47,9 @@ node {
                         ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
                         
                         # KORRIGIERTER BEFEHL: ie-app-publisher-linux em app pv ohne -a und -v
-                        ie-app-publisher-linux em app pv # <-- DIESER BEFEHL WURDE KORRIGIERT
+                        echo "Attempting to publish app version via ie-app-publisher-linux em app pv..."
+                        ie-app-publisher-linux em app pv # <-- KORRIGIERTE ZEILE
+                        echo "Publish command executed. Waiting for IEM to process..."
                         
                         echo "Waiting 15 seconds for IEM to process the upload and publish..."
                         sleep 15
@@ -66,6 +65,9 @@ node {
                     script {
                         sh '''#!/bin/bash
                             set -x # Debug-Ausgabe aktivieren (kann entfernt werden, wenn alles funktioniert)
+
+                            # NEUE ZEILE: IE_SKIP_CERTIFICATE für diese Shell-Session setzen
+                            export IE_SKIP_CERTIFICATE=true # <-- HINZUGEFÜGT
 
                             # Konfiguriere die Basis-URL deines IEM
                             IEM_BASE_URL="https://192.168.56.4:443"
@@ -123,16 +125,17 @@ node {
                             # Dies ist der zuverlässigste Weg, den Status der Version zu prüfen.
                             echo "--- Verifying App Version Status via ie-app-publisher-linux CLI ---"
                             # Login mit dem CLI-Tool, da jeder sh-Block eine neue Shell-Session ist
-                            ie-app-publisher-linux em li -u "\$IEM_BASE_URL" -e "\$USER_NAME" -p "\$PSWD"
+                            ie-app-publisher-linux em li -u "\$IEM_BASE_URL" -e "\$USER_NAME" -p "\$PSWD" # <-- SOLLTE JETZT FUNKTIONIEREN
                             
                             # App-Version Details abrufen
+                            # Wir gehen davon aus, dass -a und -v hier funktionieren, da es der Standardweg ist.
+                            # Wenn nicht, müssten wir den Output von 'ie-app-publisher-linux em app lv' ohne Parameter parsen.
                             APP_VERSION_CLI_DETAILS=\$(ie-app-publisher-linux em app lv -a "\$APP_ID" -v "\$APP_VERSION")
                             echo "Raw App Version CLI Details:"
                             echo "\$APP_VERSION_CLI_DETAILS"
                             echo "-------------------------------------------------------------------"
 
                             # Überprüfen, ob der Status "Published" oder "Released" ist
-                            # Basierend auf früheren Logs, die Status wie "Reviewed" zeigten.
                             if ! echo "\$APP_VERSION_CLI_DETAILS" | grep -q "Status: Published" && ! echo "\$APP_VERSION_CLI_DETAILS" | grep -q "Status: Released" && ! echo "\$APP_VERSION_CLI_DETAILS" | grep -q "Status: Reviewed"; then
                                 echo "ERROR: App version \$APP_VERSION is not in a deployable state (Published/Released/Reviewed) according to CLI."
                                 exit 1
@@ -172,7 +175,6 @@ node {
                 }
 
  //*/
-
             }        
         }
     }
