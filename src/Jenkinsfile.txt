@@ -23,6 +23,7 @@ node {
                     error "Dind-Daemon is not ready in the expected timeframe."
                 }
             }
+            //Start the Docker CLI inside the Dind container
             docker.image("${env.DOCKER_IMAGE_CLI}").inside("--link ${c.id}:docker --privileged -u root") {
                 stage ('Build') {
                     sh """
@@ -33,6 +34,7 @@ node {
                         cd ..
                     """
                 }
+                // Push the image to the registry
                 stage ('Upload') {
                      sh """
                         export DOCKER_HOST=tcp://docker:2375
@@ -43,97 +45,118 @@ node {
                         ie-app-publisher-linux em li -u "$IEM_URL" -e $USER_NAME -p $PSWD
                         ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
                         ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
-
-                        echo "Waiting 20 seconds for IEM to process and internal index update..."
+                        
+                        echo "Waiting 20 seconds for IEM to process the upload and internal publishing..." # <-- Wartezeit erhöht
                         sleep 20
                      """
                 }  
 
+                //Moeglich CLI Schnittstelle fuer automatischen Upload einzubauen.
+                // Erst Waittimer dann der CLI push auf das IEVD
+                //CLI Doku ist unter der edge doku schau im dateibau links und durchblaettern
+
+                                /* Deploy to given edge device */
                 stage ('Deploy to Device') {
                     script {
                         sh '''#!/bin/bash
-                            set -x
+                            set -x # Debug-Ausgabe aktivieren (kann entfernt werden, wenn alles funktioniert)
 
                             export IE_SKIP_CERTIFICATE=true
 
                             IEM_BASE_URL="https://192.168.56.4:443"
-                            IEM_AUTH_URL="$IEM_BASE_URL/portal/api/v1/login/direct"
+                            IEM_AUTH_URL="\$IEM_BASE_URL/portal/api/v1/login/direct"
                             AUTH_CURL_OUTPUT_FILE="auth_curl_response.txt"
 
                             echo "--- Attempting to get IEM Access Token ---"
-                            curl -s -X POST -H "Content-Type: application/json" -d '{"username":"'"${USER_NAME}"'","password":"'"${PSWD}"'"}' --insecure -L "$IEM_AUTH_URL" > "$AUTH_CURL_OUTPUT_FILE" 2>&1
-
-                            CURL_EXIT_CODE=$?
-                            if [ "$CURL_EXIT_CODE" -ne 0 ]; then
-                                echo "ERROR: curl command for authentication failed with exit code $CURL_EXIT_CODE."
-                                cat "$AUTH_CURL_OUTPUT_FILE"
+                            curl -s -X POST -H "Content-Type: application/json" -d '{"username":"'"${USER_NAME}"'","password":"'"${PSWD}"'"}' --insecure -L "\$IEM_AUTH_URL" > "\$AUTH_CURL_OUTPUT_FILE" 2>&1
+                            
+                            CURL_EXIT_CODE=\$?
+                            if [ "\$CURL_EXIT_CODE" -ne 0 ]; then
+                                echo "ERROR: curl command for authentication failed with exit code \$CURL_EXIT_CODE."
+                                echo "Curl output:"
+                                cat "\$AUTH_CURL_OUTPUT_FILE"
                                 exit 1
                             fi
 
                             echo "--- Raw CURL Response (from authentication) ---"
-                            cat "$AUTH_CURL_OUTPUT_FILE"
+                            cat "\$AUTH_CURL_OUTPUT_FILE"
+                            echo "-----------------------------------------------"
 
-                            IEM_TOKEN=$(cat "$AUTH_CURL_OUTPUT_FILE" | jq -r .data.access_token)
+                            IEM_TOKEN=\$(cat "\$AUTH_CURL_OUTPUT_FILE" | jq -r .data.access_token)
 
-                            if [ -z "$IEM_TOKEN" ] || [ "$IEM_TOKEN" == "null" ]; then
-                                echo "ERROR: Failed to get IEM access_token."
-                                cat "$AUTH_CURL_OUTPUT_FILE"
+                            if [ -z "\$IEM_TOKEN" ] || [ "\$IEM_TOKEN" == "null" ]; then
+                                echo "ERROR: Failed to get IEM access_token. Check credentials, IEM URL, and CURL response."
+                                echo "The response did not contain a valid access_token or authentication failed."
                                 exit 1
                             fi
 
                             echo "Successfully obtained IEM access_token."
-                            echo "IEM_TOKEN (first 10 chars): $(echo $IEM_TOKEN | cut -c 1-10)..."
+                            echo "IEM_TOKEN (first 10 chars): \$(echo \$IEM_TOKEN | cut -c 1-10)..."
 
-                            echo "Using Application ID: $APP_ID"
-                            DEVICE_ID="$EDGE_DEVICE_ID"
-                            echo "Using Device ID: $DEVICE_ID"
-                            APP_VERSION="0.0.$BUILD_NUMBER"
-                            echo "Attempting to deploy Application Version: $APP_VERSION"
 
-                            echo "--- Verifying App Details via ie-app-publisher-linux em app detail -a $APP_ID -p ---"
-                            ie-app-publisher-linux em li -u "$IEM_BASE_URL" -e "$USER_NAME" -p "$PSWD"
-                            APP_DETAILS_CLI_RESPONSE=$(ie-app-publisher-linux em app detail -a "$APP_ID" -p)
+                            echo "Using Application ID: \$APP_ID"
+                            DEVICE_ID="\$EDGE_DEVICE_ID"
+                            echo "Using Device ID: \$DEVICE_ID"
+                            APP_VERSION="0.0.\$BUILD_NUMBER"
+                            echo "Attempting to deploy Application Version: \$APP_VERSION"
+
+
+                            # --- DIAGNOSE: App-Details über CLI abfragen ---
+                            echo "--- Verifying App Details via ie-app-publisher-linux em app detail -a \$APP_ID ---"
+                            ie-app-publisher-linux em li -u "\$IEM_BASE_URL" -e "\$USER_NAME" -p "\$PSWD" # Login für CLI
+                            
+                            APP_DETAILS_CLI_RESPONSE=\$(ie-app-publisher-linux em app detail -a "\$APP_ID")
                             echo "Raw App Details CLI Response:"
-                            echo "$APP_DETAILS_CLI_RESPONSE" | jq .
+                            echo "\$APP_DETAILS_CLI_RESPONSE" | jq . # Pretty print the JSON
                             echo "-------------------------------------------------------------------"
 
-                            VERSION_STATUS=$(echo "$APP_DETAILS_CLI_RESPONSE" | jq -r '.appVersions[] | select(.versionNumber=="'"$APP_VERSION"'") | .status')
+                            # Überprüfen, ob die gewünschte Version und ihr Status vorhanden sind
+                            VERSION_STATUS=\$(echo "\$APP_DETAILS_CLI_RESPONSE" | jq -r '.Versions[] | select(.versionNumber=="'"\$APP_VERSION"'") | .status')
 
-                            if [ -z "$VERSION_STATUS" ] || [ "$VERSION_STATUS" == "null" ]; then
-                                echo "ERROR: App version $APP_VERSION not found in app details or has no status."
+                            if [ -z "\$VERSION_STATUS" ] || [ "\$VERSION_STATUS" == "null" ]; then
+                                echo "ERROR: App version \$APP_VERSION not found in app details or has no status."
+                                echo "This is unexpected. Check IEM UI for version details."
                                 exit 1
                             else
-                                echo "Confirmed: Version $APP_VERSION found in IEM with status: $VERSION_STATUS"
-                                if ! echo "$VERSION_STATUS" | grep -qE "Published|Reviewed|Released"; then
-                                    echo "WARNING: App version $APP_VERSION is not in a deployable state (Published/Reviewed/Released)."
+                                echo "Confirmed: Version \$APP_VERSION found in IEM with status: \$VERSION_STATUS"
+                                if ! echo "\$VERSION_STATUS" | grep -qE "Published|Reviewed|Released"; then
+                                    echo "WARNING: App version \$APP_VERSION is not in a deployable state (Published/Reviewed/Released)."
                                     exit 1
                                 fi
                             fi
 
-                            echo "--- Attempting to deploy application $APP_ID version $APP_VERSION to device $DEVICE_ID ---"
-                            DEPLOY_CURL_OUTPUT_FILE="deploy_curl_response.txt"
-                            curl -s -X POST \
-                                -H "Authorization: Bearer $IEM_TOKEN" \
-                                -H "Content-Type:multipart/form-data" \
-                                -F 'infoMap={"devices":["'"$DEVICE_ID"'"]}' \
-                                --insecure \
-                                "$IEM_BASE_URL/portal/api/v1/batches?appid=$APP_ID&operation=installApplication&version=$APP_VERSION" > "$DEPLOY_CURL_OUTPUT_FILE" 2>&1
 
-                            CURL_EXIT_CODE=$?
-                            if [ "$CURL_EXIT_CODE" -ne 0 ]; then
-                                echo "ERROR: Deployment curl command failed with exit code $CURL_EXIT_CODE."
-                                cat "$DEPLOY_CURL_OUTPUT_FILE"
+                            # --- SCHRITT 5: Anwendung auf dem Edge Device deployen ---
+                            echo "--- Attempting to deploy application \$APP_ID version \$APP_VERSION to device \$DEVICE_ID ---"
+                            
+                            DEPLOY_CURL_OUTPUT_FILE="deploy_curl_response.txt"
+
+                            # KORRIGIERTER CURL-BEFEHL: &version=\$APP_VERSION WIEDER HINZUGEFÜGT
+                            curl -s -X POST \\
+                                                -H "Authorization: Bearer \$IEM_TOKEN" \\
+                                                -H "Content-Type:multipart/form-data" \\
+                                                -F 'infoMap={"devices":["'"\$DEVICE_ID"'"]}' \\
+                                                --insecure \\
+                                                "\$IEM_BASE_URL/portal/api/v1/batches?appid=\$APP_ID&operation=installApplication&version=\$APP_VERSION" > "\$DEPLOY_CURL_OUTPUT_FILE" 2>&1 # <-- &version=\$APP_VERSION WIEDER HINZUGEFÜGT
+                            
+                            CURL_EXIT_CODE=\$?
+                            if [ "\$CURL_EXIT_CODE" -ne 0 ]; then
+                                echo "ERROR: Deployment curl command failed with exit code \$CURL_EXIT_CODE."
+                                echo "Deployment response:"
+                                cat "\$DEPLOY_CURL_OUTPUT_FILE"
                                 exit 1
                             fi
 
                             echo "--- Raw Deployment Response ---"
-                            cat "$DEPLOY_CURL_OUTPUT_FILE"
+                            cat "\$DEPLOY_CURL_OUTPUT_FILE"
                             echo "-------------------------------"
 
                             echo "Application deployment request sent successfully."
                         '''
                     }
                 }
+
+ //*/
             }        
         }
     }
