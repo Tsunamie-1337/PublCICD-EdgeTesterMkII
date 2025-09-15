@@ -47,7 +47,17 @@ node {
                         export IE_SKIP_CERTIFICATE=true
                         ie-app-publisher-linux em li -u "$IEM_URL" -e $USER_NAME -p $PSWD
                         ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
-                        ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
+                        
+                        # Veröffentliche die App-Version nach dem Upload
+                        ie-app-publisher-linux em app pv -a $APP_ID -v 0.0.$BUILD_NUMBER
+                        
+                        echo "Waiting 15 seconds for IEM to process the upload and publish..."
+                        sleep 15 # <-- ERHÖHTE WARTEZEIT nach dem Upload und Publish
+                        
+                        # NEUER DIAGNOSE-SCHRITT: App-Version Status über CLI abfragen
+                        echo "--- Verifying App Version Status via ie-app-publisher-linux CLI ---"
+                        ie-app-publisher-linux em app lv -a $APP_ID -v 0.0.$BUILD_NUMBER # Listet Details zu einer spezifischen Version
+                        echo "-------------------------------------------------------------------"
                      """
                 }  
 
@@ -128,15 +138,20 @@ node {
                             echo "\$APP_LIST_RESPONSE" | jq . # Pretty print the JSON
                             echo "------------------------------------------------"
 
-                            # NEUER JQ-FILTER: Findet unsere App nach ID und dann die Version innerhalb des appVersions-Arrays
-                            VERSION_FOUND_IN_LIST=\$(echo "\$APP_LIST_RESPONSE" | jq -r ".data[] | select(.id==\"\$APP_ID\") | .appVersions[] | select(.versionNumber==\"\$APP_VERSION\") | .versionNumber")
+                            # KORRIGIERTER JQ-FILTER: Findet unsere App nach ID und dann die Version innerhalb des appVersions-Arrays
+                            # ACHTUNG: Die API /applications listet die appVersions NICHT auf.
+                            # Wir müssen hier die APP_ID als String vergleichen.
+                            # Der select(.id==...) Teil ist korrekt, aber .appVersions wird hier nicht gefunden.
+                            # Wenn die App in der Liste auftaucht, ist das schon ein Erfolg.
+                            # Wir können hier nur prüfen, ob die APP_ID in der Liste der APPs auftaucht.
+                            APP_ID_IN_LIST=\$(echo "\$APP_LIST_RESPONSE" | jq -r ".data[] | select(.applicationId==\"\$APP_ID\") | .applicationId")
                             
-                            if [ -z "\$VERSION_FOUND_IN_LIST" ] || [ "\$VERSION_FOUND_IN_LIST" == "null" ]; then
-                                echo "ERROR: Desired version \$APP_VERSION not found in IEM for APP_ID \$APP_ID via full list."
-                                echo "This is unexpected after successful upload and publish. Check IEM UI for status."
+                            if [ -z "\$APP_ID_IN_LIST" ] || [ "\$APP_ID_IN_LIST" == "null" ]; then
+                                echo "ERROR: Application with ID \$APP_ID not found in the global IEM application list."
+                                echo "This is unexpected after successful upload and publish. Check IEM UI for overall app status."
                                 exit 1
                             fi
-                            echo "Confirmed: Version \$APP_VERSION exists in IEM list."
+                            echo "Confirmed: Application with ID \$APP_ID exists in IEM global list."
 
 
                             # --- SCHRITT 5: Anwendung auf dem Edge Device deployen ---
