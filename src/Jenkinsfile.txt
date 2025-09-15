@@ -62,30 +62,42 @@ stage('Deploy to Device') {
         sh '''
             set -e
 
-            # Annahme: Diese Env-Variablen wurden zuvor gesetzt
-            # IEM_TOKEN, APP_ID, EDGE_DEVICE_ID, IEM_BASE_URL
+            # diese nehmen wir jetzt aus deinem Env
+            echo "APP_ID=$APP_ID"
+            echo "EDGE_DEVICE_ID=$EDGE_DEVICE_ID"
+            echo "USER_NAME=$USER_NAME"
+            echo "PSWD=<hidden>"
+            echo "IEM_URL=$IEM_URL"
 
-            echo "Deploying App $APP_ID to Device $EDGE_DEVICE_ID via IEM $IEM_BASE_URL"
+            # Hol dir das Token per API-Login
+            IEM_TOKEN=$(curl -s -X POST \
+                -H "Content-Type: application/json" \
+                -d '{"username":"'"$USER_NAME"'","password":"'"$PSWD"'"}' \
+                --insecure \
+                "$IEM_URL/portal/api/v1/login/direct" | jq -r '.data.access_token')
 
-            # Die Antwort von Curl in eine Datei schreiben
+            if [ -z "$IEM_TOKEN" ] || [ "$IEM_TOKEN" == "null" ]; then
+                echo "ERROR: Failed to get IEM access_token!"
+                exit 2
+            fi
+
             DEPLOY_OUTPUT="deploy_curl_response.txt"
+            BASE_URL="$IEM_URL"
 
             curl -i -X POST \
                 -H "Authorization: Bearer $IEM_TOKEN" \
                 -H "Content-Type:multipart/form-data" \
                 -F "infoMap={\\"devices\\":[\\"$EDGE_DEVICE_ID\\"]}" \
                 --insecure \
-                "$IEM_BASE_URL/portal/api/v1/batches?appid=$APP_ID&operation=installApplication" \
+                "$BASE_URL/portal/api/v1/batches?appid=$APP_ID&operation=installApplication" \
                 > "$DEPLOY_OUTPUT" 2>&1
 
             STATUS=$(grep HTTP "$DEPLOY_OUTPUT" | tail -1 | awk '{print $2}')
             echo "Deployment HTTP-Status: $STATUS"
-            echo "Full Curl Output:"
             cat "$DEPLOY_OUTPUT"
 
-            # Fehlerbehandlung: Fehlschlag ab Exitcode 1
             if [ "$STATUS" != "200" ] && [ "$STATUS" != "201" ]; then
-                echo "ERROR: Deployment to device failed. See output above."
+                echo "ERROR: Deployment failed, see above."
                 exit 1
             fi
         '''
