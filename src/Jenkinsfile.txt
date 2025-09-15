@@ -60,21 +60,13 @@ stage ('Deploy to Device') {
     sh """
   set -x # Debug-Ausgabe aktivieren
 
-        # Korrekte IEM URL mit Port 9443 und dem richtigen Endpunkt
-        # Annahme: Dein IEM_URL ist derzeit "https://192.168.56.4:443"
-        # Wir müssen den Port und den Pfad anpassen.
-        # Ersetze $IEM_URL durch die korrekte URL aus der Doku, z.B. "https://192.168.56.4:443"
-        # oder konstruiere sie neu:
-        # IEM_AUTH_URL="https://192.168.56.4:443/portal/api/v1/login/direct"
-        # Wenn $IEM_URL bereits den Hostnamen/IP ohne Port enthält, kannst du es so machen:
-        IEM_BASE_URL="https://192.168.56.4:443" # <-- HIER DEINE KORREKTE IEM IP/HOSTNAME MIT PORT 9443 EINFÜGEN
+
+        IEM_BASE_URL="https://192.168.56.4:443" 
         IEM_AUTH_URL="\$IEM_BASE_URL/portal/api/v1/login/direct"
 
         CURL_OUTPUT_FILE="curl_response.txt"
 
         # 1. Get Access Token
-        # JSON-Payload in einfache Anführungszeichen setzen (sehr wichtig!)
-        # -L ist weiterhin nötig, falls es Umleitungen gibt
         curl -s -X POST \\
              -H "Content-Type: application/json" \\
              -d '{"username":"$USER_NAME","password":"$PSWD"}' \\
@@ -86,11 +78,10 @@ stage ('Deploy to Device') {
         cat "\$CURL_OUTPUT_FILE"
         echo "-------------------------------------"
 
-        # Jetzt versuchen, den Token aus dem Inhalt der Datei zu extrahieren
-        # Korrektur: jq -r .data.access_token
+
         IEM_TOKEN=\$(cat "\$CURL_OUTPUT_FILE" | jq -r .data.access_token)
 
-        # Überprüfung, ob der Token erfolgreich extrahiert wurde
+        # Check, if the token was extracted successfully
         if [ -z "\$IEM_TOKEN" ] || [ "\$IEM_TOKEN" == "null" ]; then
             echo "ERROR: Failed to get IEM access_token. Check credentials, IEM URL, and CURL response."
             echo "The response did not contain a valid access_token or authentication failed."
@@ -100,7 +91,6 @@ stage ('Deploy to Device') {
         echo "Successfully obtained IEM access_token."
         echo "IEM_TOKEN (first 10 chars): \$(echo \$IEM_TOKEN | cut -c 1-10)..." # Nur zur Bestätigung, nicht den ganzen Token loggen!
 
-        # --- Ab hier kommen die nächsten Schritte laut Doku ---
 
         # 2. Get Industrial Edge Application ID
         # curl -H "Authorization: Bearer \$IEM_TOKEN" -H "Content-Type:application/json" --insecure "\$IEM_BASE_URL/portal/api/v1/applications" | jq -r '.[] | select(.name=="<YOUR_APP_NAME>") | .id'
@@ -118,7 +108,7 @@ stage ('Deploy to Device') {
         #      "\$IEM_BASE_URL/portal/api/v1/batches?appid=$APP_ID&operation=installApplication"
 
         # Beispiel für Deployment (anpassen mit deiner APP_ID und ermittelter DEVICE_ID)
-        # DEVICE_ID="deine_ermittelte_device_id" # <--- DIESEN WERT MUSST DU ERSETZEN
+        # DEVICE_ID="529662ec59c247e29812a8f2dd824640" # <--- DIESEN WERT MUSST DU ERSETZEN
         # curl -s -X POST \\
         #      -H "Authorization: Bearer \$IEM_TOKEN" \\
         #      -H "Content-Type:multipart/form-data" \\
