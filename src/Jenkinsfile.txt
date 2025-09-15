@@ -52,65 +52,58 @@ node {
                      """
                 }
                 // Deploy the image to the edge device
-                stage('Deploy to Device') {
-                    script {
-                        sh '''
-                            set -e
 
-                            # Diese Variablen müssen im Jenkins Env gesetzt sein!
-                            echo "APP_ID=$APP_ID"
-                            echo "EDGE_DEVICE_ID=$EDGE_DEVICE_ID"
-                            echo "USER_NAME=$USER_NAME"
-                            echo "PSWD=<hidden>"
-                            echo "IEM_URL=$IEM_URL"
 
-                            # API-Login für Token
-                            IEM_TOKEN=$(curl -s -X POST \
-                                -H "Content-Type: application/json" \
-                                -d '{"username":"'"$USER_NAME"'","password":"'"$PSWD"'"}' \
-                                --insecure \
-                                "$IEM_URL/portal/api/v1/login/direct" | jq -r '.data.access_token')
 
-                            if [ -z "$IEM_TOKEN" ] || [ "$IEM_TOKEN" == "null" ]; then
-                                echo "ERROR: Failed to get IEM access_token!"
-                                exit 2
-                            fi
+stage('Deploy to Device') {
+    script {
+        sh '''
+            set -e
 
-                            # Konfiguration ermitteln (alternativ als ENV bereitstellen)
-                            CONFIG_API_URL="$IEM_URL/portal/api/v1/applications/$APP_ID/configs"
-                            CONFIG_JSON=$(curl -s -H "Authorization: Bearer $IEM_TOKEN" --insecure "$CONFIG_API_URL")
-                            CONFIG_ID=$(echo "$CONFIG_JSON" | jq -r '.[0].id')
-                            CONFIG_VERSION_ID=$(echo "$CONFIG_JSON" | jq -r '.[0].versions[0].id')
+            # Environmentvariablen wie gehabt
+            echo "APP_ID=$APP_ID"
+            echo "EDGE_DEVICE_ID=$EDGE_DEVICE_ID"
+            echo "USER_NAME=$USER_NAME"
+            echo "PSWD=<hidden>"
+            echo "IEM_URL=$IEM_URL"
 
-                            echo "CONFIG_ID: $CONFIG_ID"
-                            echo "CONFIG_VERSION_ID: $CONFIG_VERSION_ID"
+            # Token holen
+            IEM_TOKEN=$(curl -s -X POST \
+                -H "Content-Type: application/json" \
+                -d '{"username":"'"$USER_NAME"'","password":"'"$PSWD"'"}' \
+                --insecure \
+                "$IEM_URL/portal/api/v1/login/direct" | jq -r '.data.access_token')
 
-                            if [ -z "$CONFIG_ID" ] || [ -z "$CONFIG_VERSION_ID" ]; then
-                                echo "ERROR: Failed to get configId or versionId"
-                                exit 3
-                            fi
+            if [ -z "$IEM_TOKEN" ] || [ "$IEM_TOKEN" == "null" ]; then
+                echo "ERROR: Failed to get IEM access_token!"
+                exit 2
+            fi
 
-                            DEPLOY_OUTPUT="deploy_curl_response.txt"
+            DEPLOY_OUTPUT="deploy_curl_response.txt"
 
-                            curl -i -X POST \
-                                -H "Authorization: Bearer $IEM_TOKEN" \
-                                -H "Content-Type:multipart/form-data" \
-                                -F "infoMap={\\\"configs\\\":[{\\\"configId\\\":\\\"$CONFIG_ID\\\",\\\"versionId\\\":\\\"$CONFIG_VERSION_ID\\\"}],\\\"devices\\\":[\\\"$EDGE_DEVICE_ID\\\"]}" \
-                                --insecure \
-                                "$IEM_URL/portal/api/v1/batches?appid=$APP_ID&operation=installApplication" \
-                                > "$DEPLOY_OUTPUT" 2>&1
+            curl -i -X POST \
+                -H "Authorization: Bearer $IEM_TOKEN" \
+                -H "Content-Type:multipart/form-data" \
+                -F "infoMap={\\\"devices\\\":[\\\"$EDGE_DEVICE_ID\\\"]}" \
+                --insecure \
+                "$IEM_URL/portal/api/v1/batches?appid=$APP_ID&operation=installApplication" \
+                > "$DEPLOY_OUTPUT" 2>&1
 
-                            STATUS=$(grep HTTP "$DEPLOY_OUTPUT" | tail -1 | awk '{print $2}')
-                            echo "Deployment HTTP-Status: $STATUS"
-                            cat "$DEPLOY_OUTPUT"
+            STATUS=$(grep HTTP "$DEPLOY_OUTPUT" | tail -1 | awk '{print $2}')
+            echo "Deployment HTTP-Status: $STATUS"
+            cat "$DEPLOY_OUTPUT"
 
-                            if [ "$STATUS" != "200" ] && [ "$STATUS" != "201" ]; then
-                                echo "ERROR: Deployment failed, see above."
-                                exit 1
-                            fi
-                        '''
-                    }
-                }
+            if [ "$STATUS" != "200" ] && [ "$STATUS" != "201" ]; then
+                echo "ERROR: Deployment failed, see above."
+                exit 1
+            fi
+        '''
+    }
+}
+
+
+
+
 
             }        
         }
