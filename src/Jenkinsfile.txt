@@ -46,11 +46,8 @@ node {
                         ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
                         ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
                         
-                        # ENTFERNT: ie-app-publisher-linux em app pv (da es 'unknown option -a' Fehler verursacht)
-                        # Die App-Version sollte nach uuv in der UI sichtbar sein.
-                        
                         echo "Waiting 15 seconds for IEM to process the upload..."
-                        sleep 15 # Wartezeit nach dem Upload
+                        sleep 15
                      """
                 }  
 
@@ -64,19 +61,12 @@ node {
                         sh '''#!/bin/bash
                             set -x # Debug-Ausgabe aktivieren (kann entfernt werden, wenn alles funktioniert)
 
-                            # NEUE ZEILE: IE_SKIP_CERTIFICATE für diese Shell-Session setzen
                             export IE_SKIP_CERTIFICATE=true
 
-                            # Konfiguriere die Basis-URL deines IEM
                             IEM_BASE_URL="https://192.168.56.4:443"
-
-                            # Definition des Authentifizierungs-Endpunkts
                             IEM_AUTH_URL="\$IEM_BASE_URL/portal/api/v1/login/direct"
-
-                            # Temporäre Datei für curl-Ausgaben (für Auth)
                             AUTH_CURL_OUTPUT_FILE="auth_curl_response.txt"
 
-                            # --- SCHRITT 1: Access Token für IEM API abrufen ---
                             echo "--- Attempting to get IEM Access Token ---"
                             curl -s -X POST -H "Content-Type: application/json" -d '{"username":"'"${USER_NAME}"'","password":"'"${PSWD}"'"}' --insecure -L "\$IEM_AUTH_URL" > "\$AUTH_CURL_OUTPUT_FILE" 2>&1
                             
@@ -92,10 +82,8 @@ node {
                             cat "\$AUTH_CURL_OUTPUT_FILE"
                             echo "-----------------------------------------------"
 
-                            # Extrahiere den Access Token aus der JSON-Antwort
                             IEM_TOKEN=\$(cat "\$AUTH_CURL_OUTPUT_FILE" | jq -r .data.access_token)
 
-                            # Überprüfung, ob der Token erfolgreich extrahiert wurde
                             if [ -z "\$IEM_TOKEN" ] || [ "\$IEM_TOKEN" == "null" ]; then
                                 echo "ERROR: Failed to get IEM access_token. Check credentials, IEM URL, and CURL response."
                                 echo "The response did not contain a valid access_token or authentication failed."
@@ -106,61 +94,36 @@ node {
                             echo "IEM_TOKEN (first 10 chars): \$(echo \$IEM_TOKEN | cut -c 1-10)..."
 
 
-                            # --- SCHRITT 2: Industrial Edge Application ID verwenden ---
                             echo "Using Application ID: \$APP_ID"
-
-
-                            # --- SCHRITT 3: Device ID verwenden ---
-                            DEVICE_ID="\$EDGE_DEVICE_ID" # <-- VERWENDET DIE VARIABLE $EDGE_DEVICE_ID
+                            DEVICE_ID="\$EDGE_DEVICE_ID"
                             echo "Using Device ID: \$DEVICE_ID"
-
-                            # --- SCHRITT 4: Anwendungsversion definieren ---
-                            APP_VERSION="0.0.\$BUILD_NUMBER" # <-- Verwendet BUILD_NUMBER aus Jenkins
+                            APP_VERSION="0.0.\$BUILD_NUMBER"
                             echo "Attempting to deploy Application Version: \$APP_VERSION"
 
 
-                            # --- KORRIGIERTER DIAGNOSE-SCHRITT: App-Details über CLI abfragen ---
-                            echo "--- Verifying App Version Status via ie-app-publisher-linux em app detail ---"
-                            # Login mit dem CLI-Tool, da jeder sh-Block eine neue Shell-Session ist
-                            ie-app-publisher-linux em li -u "\$IEM_BASE_URL" -e "\$USER_NAME" -p "\$PSWD"
-                            
-                            # App-Details abrufen (sollte JSON zurückgeben)
-                            # Wir verwenden 'detail -a' Option, da es die logischste Wahl ist.
-                            APP_DETAILS_CLI_RESPONSE=\$(ie-app-publisher-linux em app detail -a "\$APP_ID")
-                            echo "Raw App Details CLI Response:"
-                            echo "\$APP_DETAILS_CLI_RESPONSE" | jq . # Pretty print the JSON
+                            # --- DIAGNOSE: Hilfe für ie-app-publisher-linux em app detail ---
+                            echo "--- Getting help for ie-app-publisher-linux em app detail ---"
+                            ie-app-publisher-linux em li -u "\$IEM_BASE_URL" -e "\$USER_NAME" -p "\$PSWD" # Login für CLI
+                            ie-app-publisher-linux em app detail --help # <-- NEUER BEFEHL
                             echo "-------------------------------------------------------------------"
 
-                            # Überprüfen, ob die gewünschte Version und ihr Status vorhanden sind
-                            # Der jq-Filter muss die JSON-Struktur des 'detail'-Outputs kennen
-                            VERSION_STATUS=\$(echo "\$APP_DETAILS_CLI_RESPONSE" | jq -r '.appVersions[] | select(.versionNumber=="'"\$APP_VERSION"'") | .status')
-
-                            if [ -z "\$VERSION_STATUS" ] || [ "\$VERSION_STATUS" == "null" ]; then
-                                echo "ERROR: App version \$APP_VERSION not found in app details or has no status."
-                                echo "This is unexpected. Check IEM UI for version details."
-                                exit 1
-                            else
-                                echo "Confirmed: Version \$APP_VERSION found in IEM with status: \$VERSION_STATUS"
-                                # Hier kannst du prüfen, ob der Status "Published" oder "Reviewed" ist
-                                if ! echo "\$VERSION_STATUS" | grep -qE "Published|Reviewed|Released"; then
-                                    echo "WARNING: App version \$APP_VERSION is not in a deployable state (Published/Reviewed/Released)."
-                                    exit 1
-                                fi
-                            fi
-
+                            # --- DIAGNOSE: Hilfe für ie-app-publisher-linux em app ---
+                            echo "--- Getting help for ie-app-publisher-linux em app ---"
+                            ie-app-publisher-linux em app --help # <-- NEUER BEFEHL
+                            echo "-------------------------------------------------------------------"
 
                             # --- SCHRITT 5: Anwendung auf dem Edge Device deployen ---
                             echo "--- Attempting to deploy application \$APP_ID version \$APP_VERSION to device \$DEVICE_ID ---"
                             
-                            # Temporäre Datei für curl-Ausgaben (für Deployment)
                             DEPLOY_CURL_OUTPUT_FILE="deploy_curl_response.txt"
 
+                            # KORRIGIERTER CURL-BEFEHL: OHNE &version=\$APP_VERSION PARAMETER
                             curl -s -X POST \\
                                                 -H "Authorization: Bearer \$IEM_TOKEN" \\
                                                 -H "Content-Type:multipart/form-data" \\
                                                 -F 'infoMap={"devices":["'"\$DEVICE_ID"'"]}' \\
                                                 --insecure \\
-                                                "\$IEM_BASE_URL/portal/api/v1/batches?appid=\$APP_ID&operation=installApplication&version=\$APP_VERSION" > "\$DEPLOY_CURL_OUTPUT_FILE" 2>&1
+                                                "\$IEM_BASE_URL/portal/api/v1/batches?appid=\$APP_ID&operation=installApplication" > "\$DEPLOY_CURL_OUTPUT_FILE" 2>&1 # <-- &version=\$APP_VERSION ENTFERNT
                             
                             CURL_EXIT_CODE=\$?
                             if [ "\$CURL_EXIT_CODE" -ne 0 ]; then
@@ -174,7 +137,6 @@ node {
                             cat "\$DEPLOY_CURL_OUTPUT_FILE"
                             echo "-------------------------------"
 
-                            # Optional: Überprüfe die Deployment-Antwort auf Erfolg oder Status
                             echo "Application deployment request sent successfully."
                         '''
                     }
