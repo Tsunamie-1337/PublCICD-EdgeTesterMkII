@@ -113,7 +113,7 @@ stage ('Deploy to Device') {
 
         # --- SCHRITT 3: Device ID statisch setzen ---
         # Ersetze <YOUR_KNOWN_DEVICE_ID> durch die tatsächliche ID deines Edge-Geräts.
-        DEVICE_ID="<YOUR_KNOWN_DEVICE_ID>" # <-- HIER DEINE BEKANNTE DEVICE ID EINFÜGEN
+        DEVICE_ID="529662ec59c247e29812a8f2dd824640" # <-- HIER DEINE BEKANNTE DEVICE ID EINFÜGEN
         echo "Using static Device ID: \$DEVICE_ID"
 
 
