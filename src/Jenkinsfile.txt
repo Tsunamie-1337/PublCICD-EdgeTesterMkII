@@ -114,34 +114,30 @@ stage ('Deploy to Device') {
             echo "Attempting to deploy Application Version: \$APP_VERSION"
 
 
-            # --- NEUER DIAGNOSE-SCHRITT: Verfügbare App-Versionen im IEM prüfen ---
+            # --- KORRIGIERTER DIAGNOSE-SCHRITT: Verfügbare App-Versionen im IEM prüfen ---
             echo "--- Verifying App Version \$APP_VERSION in IEM (with 5s delay) ---"
             sleep 5 # Gib IEM ein paar Sekunden Zeit, um den Upload zu verarbeiten
 
-            APP_VERSIONS_DETAIL_RESPONSE=\$(curl -s -H "Authorization: Bearer \$IEM_TOKEN" \\
-                                                 -H "Content-Type:application/json" \\
-                                                 --insecure \\
-                                                 "\$IEM_BASE_URL/portal/api/v1/applications/\$APP_ID/versions")
+            # KORRIGIERTER ENDPUNKT: /portal/api/v1/applications/$APP_ID
+            APP_DETAILS_RESPONSE=\$(curl -s -H "Authorization: Bearer \$IEM_TOKEN" \\
+                                            -H "Content-Type:application/json" \\
+                                            --insecure \\
+                                            "\$IEM_BASE_URL/portal/api/v1/applications/\$APP_ID")
 
-            echo "Raw App Versions Detail Response:"
-            echo "\$APP_VERSIONS_DETAIL_RESPONSE" | jq . # Pretty print the JSON
+            echo "Raw App Details Response:"
+            echo "\$APP_DETAILS_RESPONSE" | jq . # Pretty print the JSON
             echo "------------------------------------------------"
 
-            # Versuche, die spezifische Version und ihren Status zu finden
-            VERSION_STATUS=\$(echo "\$APP_VERSIONS_DETAIL_RESPONSE" | jq -r ".data[] | select(.version==\"\$APP_VERSION\") | .status")
+            # KORRIGIERTER JQ-FILTER: Navigiert zu .appVersions[] und prüft .versionNumber
+            VERSION_EXISTS=\$(echo "\$APP_DETAILS_RESPONSE" | jq -r ".appVersions[] | select(.versionNumber==\"\$APP_VERSION\") | .versionNumber")
+            # Optional: Status prüfen, falls nötig (z.B. .appVersions[] | select(.versionNumber==\"\$APP_VERSION\") | .status)
 
-            if [ -z "\$VERSION_STATUS" ] || [ "\$VERSION_STATUS" == "null" ]; then
-                echo "ERROR: Version \$APP_VERSION was not found in the IEM version list for APP_ID \$APP_ID."
+            if [ -z "\$VERSION_EXISTS" ] || [ "\$VERSION_EXISTS" == "null" ]; then
+                echo "ERROR: Desired version \$APP_VERSION not found in IEM for APP_ID \$APP_ID."
                 echo "This is unexpected after successful upload. Check IEM UI for status."
                 exit 1
-            else
-                echo "Confirmed: Version \$APP_VERSION found in IEM with status: \$VERSION_STATUS"
-                # Optional: Wenn der Status "Reviewed" oder "Released" sein muss, kannst du hier prüfen
-                # if [ "\$VERSION_STATUS" != "Reviewed" ]; then
-                #     echo "WARNING: Version \$APP_VERSION is not in 'Reviewed' status. Deployment might fail."
-                #     # exit 1 # Entkommentieren, wenn dieser Status zwingend erforderlich ist
-                # fi
             fi
+            echo "Confirmed: Version \$APP_VERSION exists in IEM."
 
 
             # --- SCHRITT 5: Anwendung auf dem Edge Device deployen ---
