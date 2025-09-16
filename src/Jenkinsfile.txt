@@ -67,6 +67,8 @@ stage('Deploy to Device') {
             echo "PSWD=<hidden>"
             echo "IEM_URL=$IEM_URL"
 
+            VERSION="0.0.$BUILD_NUMBER"
+
             # Token holen
             IEM_TOKEN=$(curl -s -X POST \
                 -H "Content-Type: application/json" \
