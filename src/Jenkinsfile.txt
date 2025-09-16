@@ -85,7 +85,9 @@ stage('Deploy to Device') {
 
 
 
-                        # Warteschleife 1-2 Minuten (maximal 18*10s = 3 Minuten)
+                        # Warteschleife 1-3 Minuten (maximal 18*10s = 3 Minuten)
+                        export IE_SKIP_CERTIFICATE=true
+                        ie-app-publisher-linux em app detail -a "$APP_ID" | head -20
                         echo "Warte, bis neue App-Version im Status 'PUBLISHED' oder 'RELEASED' ist ..."
                         for i in {1..18}; do
                         STATUS=$(ie-app-publisher-linux em app detail -a "$APP_ID" | jq -r '.versions[] | select(.versionNumber=="'$VERSION'") | .status')
