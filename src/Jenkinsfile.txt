@@ -88,16 +88,22 @@ stage('Deploy to Device') {
                         # Warteschleife 1-3 Minuten (maximal 18*10s = 3 Minuten)
                         export IE_SKIP_CERTIFICATE=true
                         ie-app-publisher-linux em li -u "$IEM_URL" -e "$USER_NAME" -p "$PSWD"
-                        
+
                         echo "Warte, bis neue App-Version im Status 'PUBLISHED' oder 'RELEASED' ist ..."
                         for i in {1..18}; do
-                        STATUS=$(ie-app-publisher-linux em app detail -a "$APP_ID" | jq -r '.versions[] | select(.versionNumber=="'$VERSION'") | .status')
-                        echo "Version $VERSION Status: $STATUS"
-                        if [ "$STATUS" = "PUBLISHED" ] || [ "$STATUS" = "RELEASED" ]; then
-                            echo "Version $VERSION ist $STATUS! Deployment wird gestartet."
-                            break
-                        fi
-                        sleep 10
+                            RESPONSE=$(ie-app-publisher-linux em app detail -a "$APP_ID" 2>&1)
+                            if echo "$RESPONSE" | grep -q 'Application detail not found'; then
+                                echo "IEM noch nicht synchron, retry in 10s ..."
+                                sleep 10
+                                continue
+                            fi
+                            STATUS=$(echo "$RESPONSE" | jq -r '.versions[] | select(.versionNumber=="'$VERSION'") | .status')
+                            echo "Version $VERSION Status: $STATUS"
+                            if [ "$STATUS" = "PUBLISHED" ] || [ "$STATUS" = "RELEASED" ]; then
+                                echo "Version $VERSION ist $STATUS! Deployment wird gestartet."
+                                break
+                            fi
+                            sleep 10
                         done
 
 
