@@ -51,7 +51,82 @@ node {
                         sleep 20
                      """
                 }
-                // Deploy the image to the edge device
+                stage('Verify Tools in Container') {
+            steps {
+                script {
+                    echo "Verifying tools inside the Docker container..."
+                    sh '''
+                        set -e
+                        echo "IECTL Version: $(iectl version)"
+                        echo "edge-cli Version: $(edge-cli version)" # Prüft auch edge-cli
+                        echo "jq Version: $(jq --version)"
+                    '''
+                }
+            }
+        }
+        stage('Prepare Specific Device Group') {
+            steps {
+                script {
+                    echo "Preparing device group for specific device: ${EDGE_DEVICE_ID}"
+
+                    sh '''
+                        set -e
+                        export IE_SKIP_CERTIFICATE=true
+
+                        # Login mit IECTL (läuft jetzt im Container)
+                        iectl login --url "$IEM_URL" --username "$USER_NAME" --password "$PSWD"
+
+                        # Name der dedizierten Gerätegruppe
+                        DEVICE_GROUP_NAME="SingleDeviceGroup-${EDGE_DEVICE_ID}"
+
+                        # Versuche, die Gerätegruppe zu finden
+                        GROUP_ID=$(iectl device-group get --name "$DEVICE_GROUP_NAME" --output json | jq -r '.[0].id // empty')
+
+                        if [ -z "$GROUP_ID" ]; then
+                            echo "Gerätegruppe '$DEVICE_GROUP_NAME' nicht gefunden. Erstelle neue Gruppe..."
+                            GROUP_ID=$(iectl device-group create --name "$DEVICE_GROUP_NAME" --output json | jq -r '.id')
+                            echo "Neue Gerätegruppe mit ID: $GROUP_ID erstellt."
+                        else
+                            echo "Gerätegruppe '$DEVICE_GROUP_NAME' mit ID: $GROUP_ID gefunden."
+                        fi
+
+                        # Stelle sicher, dass nur das spezifische Gerät in der Gruppe ist
+                        CURRENT_DEVICES_IN_GROUP=$(iectl device-group get --id "$GROUP_ID" --output json | jq -r '.deviceIds[] // empty')
+                        if [ -n "$CURRENT_DEVICES_IN_GROUP" ]; then
+                            echo "Entferne bestehende Geräte aus Gruppe $GROUP_ID..."
+                            # iectl device-group remove-devices erwartet eine kommaseparierte Liste
+                            iectl device-group remove-devices --id "$GROUP_ID" --device-ids "$(echo "$CURRENT_DEVICES_IN_GROUP" | tr '\n' ',' | sed 's/,$//')" # sed entfernt evtl. letztes Komma
+                        fi
+
+                        # Füge das spezifische Gerät zur Gruppe hinzu
+                        echo "Füge Gerät ${EDGE_DEVICE_ID} zu Gruppe $GROUP_ID hinzu..."
+                        iectl device-group add-devices --id "$GROUP_ID" --device-ids "$EDGE_DEVICE_ID"
+
+                        # Speichere die GROUP_ID für die nächste Stage
+                        echo "GROUP_ID=$GROUP_ID" > group_id.env
+                    '''
+                    // Lade die GROUP_ID in die Umgebung der Jenkins-Pipeline
+                    script {
+                        def props = readProperties file: 'group_id.env'
+                        env.TARGET_GROUP_ID = props.GROUP_ID
+                        echo "Target Group ID for deployment: ${env.TARGET_GROUP_ID}"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Application to Specific Device Group') {
+            steps {
+                script {
+                    // Hier verwendest du die edge-cli, um auf die mit IECTL vorbereitete Gruppe zu deployen
+                    echo "Deploying application ${APP_NAME} version ${VERSION} to specific device group ${env.TARGET_GROUP_ID}"
+                    sh "edge-cli iem app deploy --app-name ${APP_NAME} --version ${VERSION} --group-id ${env.TARGET_GROUP_ID} --target-version ${TARGET_VERSION}"
+                    // Optional: Warte auf Deployment-Status mit edge-cli oder IEM API
+                    // sh "edge-cli iem app deployment-status --app-name ${APP_NAME} --version ${VERSION} --group-id ${env.TARGET_GROUP_ID}"
+                }
+            }
+        }
+                /* Deploy the image to the edge device
                 stage('Deploy to Device') {
                     script {
                         sh '''
@@ -123,7 +198,7 @@ node {
                             fi
                         '''
                     }
-                }
+                }*/
             }        
         }
     }
