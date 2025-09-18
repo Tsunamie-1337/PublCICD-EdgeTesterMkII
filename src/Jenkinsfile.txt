@@ -88,11 +88,12 @@ stage('Upload to IEM and deploy on Device') {
 
 
 
-
+iectl config list publisher
 
 iectl config add publisher \
   --name publisher-dind \
-  --dockerurl tcp://docker:2375
+  --dockerurl tcp://docker:2375 \
+  --workspace /app/src/workspace
 
 
 
