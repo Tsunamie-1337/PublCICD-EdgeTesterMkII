@@ -83,7 +83,7 @@ stage('Upload to IEM and deploy on Device') {
 
       echo "----- Create new app version ------"
       iectl publisher app-project version create \
-        -a "$APP_NAME" \
+        -a "$APP_ID" \
         -v "0.0.${BUILD_NUMBER}" \
         -y ./app/docker-compose.prod.yml \
         -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
