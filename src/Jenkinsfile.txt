@@ -77,6 +77,7 @@ stage('Upload to IEM and deploy on Device') {
 
       echo "----- IEM Config ------"
       iectl config add iem --name "iemdev" --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
+      
 
       echo "----- Create new app version ------"
       iectl publisher app-project version create \
@@ -90,12 +91,13 @@ stage('Upload to IEM and deploy on Device') {
         -r '/'
 
       echo "----- App-Version hochladen ------"
-      iectl publisher app-project version upload -a "$APP_NAME" -v "$NEW_VERSION"
+      iectl publisher app-project version upload -a "$APP_NAME" -v "0.0.${BUILD_NUMBER}"
+      
 
       echo "----- Auf Edge Device deployen ------"
       iectl iem app-project install \
         -a "$APP_NAME" \
-        --version "$NEW_VERSION" \
+        --version "0.0.${BUILD_NUMBER}" \
         -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'
     '''
 }
