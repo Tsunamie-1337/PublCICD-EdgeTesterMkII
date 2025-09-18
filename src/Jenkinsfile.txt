@@ -78,26 +78,8 @@ stage('Upload to IEM and deploy on Device') {
       echo "----- IEM Config ------"
       iectl config add iem --name "iemdev" --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
 
-      echo "----- Version ermitteln ------"
-      RAW=$(iectl iem app-project app-details --project-name "$APP_NAME" --app-name "$APP_NAME" 2>/dev/null)
-      echo "$RAW" | jq . >/dev/null 2>&1
-      if [ $? -eq 0 ]; then
-        OLD_VERSION=$(echo "$RAW" | jq -r '.versions[0].versionNumber // "0.0.0"')
-      else
-        OLD_VERSION="0.0.0"
-      fi
-      if [ -z "$OLD_VERSION" ]; then OLD_VERSION="0.0.0"; fi
 
-      echo "Gefundene alte Version ist: $OLD_VERSION"
 
-      IFS='.' read -r -a version_parts <<< "$OLD_VERSION"
-      version_parts[2]=$((version_parts[2] + 1 ))
-      NEW_VERSION="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
-
-      echo "Setze neue Version auf: $NEW_VERSION"
-      export NEW_VERSION
-
-      echo "----- App-Version bauen ------"
       iectl publisher app-project version create \
         -a "$APP_NAME" \
         -v "$NEW_VERSION" \
