@@ -87,9 +87,14 @@ else
   OLD_VERSION="0.0.0"
 fi
 if [ -z "$OLD_VERSION" ]; then OLD_VERSION="0.0.0"; fi
+
+echo "Gefundene alte Version ist: $OLD_VERSION"
+
 IFS='.' read -r -a version_parts <<< "$OLD_VERSION"
 version_parts[2]=$((version_parts[2] + 1 ))
 NEW_VERSION="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
+
+echo "Setze neue Version auf: $NEW_VERSION"
 export NEW_VERSION
 
 echo "Gefundene alte Version ist: $OLD_VERSION"
