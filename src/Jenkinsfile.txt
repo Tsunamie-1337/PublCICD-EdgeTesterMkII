@@ -84,20 +84,14 @@ stage('Upload to IEM and deploy on Device') {
       APP_ID="$APP_ID"          # Numerische ID (z.B. für Install falls nötig)
       APP_NAME="CICDTestMkII"   # Setze hier den echten IEM-Namen deiner App!
 
-env | grep DOCKER
-echo "Teste direkten Zugriff auf dind:"
-docker --host tcp://docker:2375 version
-
-
-iectl config list publisher
-
-iectl config add publisher \
-  --name publisher-dind \
-  --dockerurl tcp://docker:2375 \
-  --workspace /app/src/workspace
 
 
 
+
+
+
+
+      
       echo "----- IEM Login ------"
       export IE_SKIP_CERTIFICATE=true
       export EDGE_SKIP_TLS=1
