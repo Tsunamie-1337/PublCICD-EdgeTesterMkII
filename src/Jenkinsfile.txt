@@ -73,7 +73,6 @@ stage('Upload to IEM and deploy on Device') {
       set -e
 
       # Prepare workspace
-      export DOCKER_HOST=tcp://docker:2375
       cp -RT src/app /app/src/workspace
       cd /app/src/workspace
 
