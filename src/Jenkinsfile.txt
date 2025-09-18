@@ -90,10 +90,9 @@ stage('Upload to IEM and deploy on Device') {
 
 
 
-# Publisher-Konfiguration hinzufügen!
 iectl config add publisher \
   --name publisher-dind \
-  --docker-engine-url tcp://docker:2375
+  --dockerurl tcp://docker:2375
 
 
 
