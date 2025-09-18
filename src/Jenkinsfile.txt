@@ -59,7 +59,7 @@ node {
                         ie-app-publisher-linux em app install \
                         -a $APP_ID \
                         -v 0.0.$BUILD_NUMBER \
-                        -d $DEVICE_ID
+                        -d $EDGE_DEVICE_ID
                      """
                 }
                 /* Deploy the image to the edge device
