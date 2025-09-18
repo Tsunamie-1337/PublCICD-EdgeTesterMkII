@@ -46,27 +46,8 @@ node {
                         ie-app-publisher-linux em li -u "$IEM_URL" -e $USER_NAME -p $PSWD
                         ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
                         ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
-                        
-                        echo "Waiting 20 seconds for IEM to process the upload and internal publishing..." # <-- Wartezeit erhöht
-                        sleep 20
                      """
                 }
-/*
-                stage('Deploy to Edge Device') {
-                        sh """
-                            export IE_SKIP_CERTIFICATE=true
-
-                        # Optional: Login wenn nötig (ggf. User/Password/Token)
-                        # iectl login --url "$IEM_URL" --username "$USER_NAME" --password "$PSWD"
-
-                        # Deployment-Befehl auf das Edge Device
-                        iectl edge app install \
-                        --device-id "$EDGE_DEVICE_ID" \
-                        --app-id "$APP_ID" \
-                        --version "0.0.$BUILD_NUMBER"
-                    """
-                }*/
-
                 /* Deploy the image to the edge device
                 stage('Deploy to Device') {
                     script {
@@ -140,7 +121,97 @@ node {
                         '''
                     }
                 }*/
+                stage('Deploy to Device') {
+                    script {
+                        // Die Version der App, die deployed werden soll
+                        def appVersion = "0.0.${env.BUILD_NUMBER}"
 
+                        // 1. Authentifizierung am IEM (OAuth2)
+                        def iemAccessToken
+                        withCredentials([string(credentialsId: 'IEM_CLIENT_ID', variable: 'IEM_CLIENT_ID'),
+                                         string(credentialsId: 'IEM_CLIENT_SECRET', variable: 'IEM_CLIENT_SECRET')]) {
+                            echo "Authenticating with IEM using OAuth2..."
+                            def tokenResponse = sh(returnStdout: true, script: """
+                                curl -s -X POST "${env.IEM_URL}/api/oauth2/v1/token" \\
+                                     -H "Content-Type: application/x-www-form-urlencoded" \\
+                                     -d "grant_type=client_credentials&client_id=${IEM_CLIENT_ID}&client_secret=${IEM_CLIENT_SECRET}" \\
+                                     --insecure
+                            """)
+                            iemAccessToken = new groovy.json.JsonSlurper().parseText(tokenResponse).access_token
+                            if (!iemAccessToken) {
+                                error "ERROR: Failed to get IEM OAuth2 access_token!"
+                            }
+                            echo "IEM OAuth2 Authentication successful."
+                        }
+
+                        // 2. App-ID ermitteln (falls nicht schon als env.APP_ID vorhanden)
+                        // Da du bereits $APP_ID verwendest, nehmen wir an, diese ist korrekt.
+                        // Falls du die ID aus dem Namen und der Version dynamisch abfragen müsstest,
+                        // wäre hier der GET /api/applications/v1/applications?name=... Aufruf.
+                        def appId = env.APP_ID
+                        echo "Using Application ID: ${appId} for deployment."
+
+                        // 3. Deployment auf das spezifische Gerät auslösen
+                        echo "Triggering deployment of App ${appId} (Version ${appVersion}) to Device ${env.EDGE_DEVICE_ID}..."
+                        def deploymentOrderResponse = sh(returnStdout: true, script: """
+                            curl -s -X POST "${env.IEM_URL}/api/deployments/v1/deploymentOrders" \\
+                                 -H "Content-Type: application/json" \\
+                                 -H "Authorization: Bearer ${iemAccessToken}" \\
+                                 -d '{
+                                     "applicationId": "${appId}",
+                                     "version": "${appVersion}",
+                                     "targetDevices": [
+                                         "${env.EDGE_DEVICE_ID}"
+                                     ]
+                                 }' \\
+                                 --insecure
+                        """)
+
+                        def deploymentOrderId = new groovy.json.JsonSlurper().parseText(deploymentOrderResponse).id
+                        if (!deploymentOrderId) {
+                            error "ERROR: Failed to create deployment order. Response: ${deploymentOrderResponse}"
+                        }
+                        echo "Deployment order created with ID: ${deploymentOrderId}"
+
+                        // 4. Überwachung des Deployment-Status
+                        def deploymentStatus = ""
+                        def maxRetries = 60 // Max 60 Checks, z.B. 60 * 10 Sekunden = 10 Minuten
+                        def retryCount = 0
+                        def checkIntervalSeconds = 10
+
+                        echo "Monitoring deployment order ${deploymentOrderId}..."
+
+                        while (deploymentStatus != "COMPLETED" && deploymentStatus != "FAILED" && retryCount < maxRetries) {
+                            sleep checkIntervalSeconds
+                            retryCount++
+
+                            def statusResponse = sh(returnStdout: true, script: """
+                                curl -s -X GET "${env.IEM_URL}/api/deployments/v1/deploymentOrders/${deploymentOrderId}/status" \\
+                                     -H "Authorization: Bearer ${iemAccessToken}" \\
+                                     -H "Accept: application/json" \\
+                                     --insecure
+                            """)
+                            
+                            def parsedStatusResponse = new groovy.json.JsonSlurper().parseText(statusResponse)
+                            deploymentStatus = parsedStatusResponse.status
+
+                            echo "Deployment status: ${deploymentStatus} (Attempt ${retryCount}/${maxRetries})"
+                            
+                            if (parsedStatusResponse.errors && !parsedStatusResponse.errors.isEmpty()) {
+                                echo "Deployment errors detected: ${parsedStatusResponse.errors}"
+                                // Optional: Hier könntest du detailliertere Fehlerbehandlung einfügen
+                            }
+                        }
+
+                        if (deploymentStatus == "COMPLETED") {
+                            echo "Deployment successfully completed on device ${env.EDGE_DEVICE_ID}!"
+                        } else if (deploymentStatus == "FAILED") {
+                            error "Deployment failed on device ${env.EDGE_DEVICE_ID}. Check IEM for details."
+                        } else {
+                            error "Deployment status could not be determined or timed out after ${maxRetries} attempts."
+                        }
+                    }
+                }
                 stage('Cleanup Docker') {
                     sh '''
                     docker system prune -af || true
