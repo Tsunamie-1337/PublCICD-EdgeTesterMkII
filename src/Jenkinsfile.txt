@@ -57,7 +57,7 @@ node {
 
                         #Deploy the app on specific device
                         ie-app-publisher-linux em app install \
-                        -a $APP_ID \
+                        -n CICDTestMkII \
                         -v 0.0.$BUILD_NUMBER \
                         -d $EDGE_DEVICE_ID
                      """
