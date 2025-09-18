@@ -39,7 +39,7 @@ node {
                 /*
                 stage ('Upload') {
                      sh """
-                        export DOCKER_HOST=tcp://docker:2375
+                        # export DOCKER_HOST=tcp://docker:2375 IS THAT NEEDE LOOK INT THE BLOCK ABOVE!!
 
                         # Prepare workspace
                         cp -RT src/app /app/src/workspace
@@ -84,7 +84,9 @@ stage('Upload to IEM and deploy on Device') {
       APP_ID="$APP_ID"          # Numerische ID (z.B. für Install falls nötig)
       APP_NAME="CICDTestMkII"   # Setze hier den echten IEM-Namen deiner App!
 
-
+env | grep DOCKER
+echo "Teste direkten Zugriff auf dind:"
+docker --host tcp://docker:2375 version
 
 
 iectl config list publisher
