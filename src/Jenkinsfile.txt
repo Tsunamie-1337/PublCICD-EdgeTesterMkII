@@ -78,11 +78,10 @@ stage('Upload to IEM and deploy on Device') {
       echo "----- IEM Config ------"
       iectl config add iem --name "iemdev" --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
 
-
-
+      echo "----- Create new app version ------"
       iectl publisher app-project version create \
         -a "$APP_NAME" \
-        -v "$NEW_VERSION" \
+        -v "0.0.${BUILD_NUMBER}" \
         -y ./app/docker-compose.prod.yml \
         -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
         -s 'hello-edge' \
