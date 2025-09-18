@@ -81,6 +81,24 @@ stage('Upload to IEM and deploy on Device') {
       iectl config add iem --name "iemdev" --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
       
 
+
+
+
+
+echo "=========== docker-compose.prod.yml (cat) ==========="
+cat ./app/docker-compose.prod.yml
+echo "=========== docker-compose.prod.yml (validate) ======="
+docker-compose -f ./app/docker-compose.prod.yml config
+echo "======================================================"
+
+
+
+
+
+
+
+
+
       echo "----- Create new app version ------"
       iectl publisher app-project version create \
         -a "$APP_ID" \
