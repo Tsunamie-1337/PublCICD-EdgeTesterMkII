@@ -51,14 +51,22 @@ node {
                         sleep 20
                      """
                 }
-                
+
                 stage('Deploy to Edge Device') {
-                    steps {
                         sh """
                             export IE_SKIP_CERTIFICATE=true
 
-                            # Optional: Login wenn nötig (ggf. User/Password/Token)
-                            # iectl login --url "$IEM_URL" --username "$USER_NAME" --password "$PSWD"
+                        # Optional: Login wenn nötig (ggf. User/Password/Token)
+                        # iectl login --url "$IEM_URL" --username "$USER_NAME" --password "$PSWD"
+
+                        # Deployment-Befehl auf das Edge Device
+                        iectl edge app install \
+                        --device-id "$EDGE_DEVICE_ID" \
+                        --app-id "$APP_ID" \
+                        --version "0.0.$BUILD_NUMBER"
+                    """
+                }
+            /* Deploy the image to the edge device
 
                             # Deployment-Befehl auf das Edge Device
                             iectl edge app install \
