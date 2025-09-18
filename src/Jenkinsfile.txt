@@ -89,18 +89,18 @@ node {
                         iectl config add iem --name "iemdev" --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
 
                         echo "----- Determine new version ------"
-                        OLD_VERSION=$(iectl iem app-project app-details --project-name "$APP_ID" --app-name "$APP_ID" | jq -r '.versions[0].versionNumber // "0.0.0"')
-                        IFS='.' read -r -a version_parts <<< "$OLD_VERSION"
-                        version_parts[2]=$((version_parts[2] + 1 ))
-                        NEW_VERSION="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
+                        OLD_VERSION=\$(iectl iem app-project app-details --project-name "$APP_ID" --app-name "$APP_ID" | jq -r '.versions[0].versionNumber // "0.0.0"')
+                        IFS='.' read -r -a version_parts <<< "\$OLD_VERSION"
+                        version_parts[2]=\$((version_parts[2] + 1 ))
+                        NEW_VERSION="\${version_parts[0]}.\${version_parts[1]}.\${version_parts[2]}"
                         export NEW_VERSION
 
-                        echo "Building version: $NEW_VERSION for app: $APP_ID"
+                        echo "Building version: \$NEW_VERSION for app: \$APP_ID"
 
                         echo "----- Add new app version ------"
                         iectl publisher app-project version create \
                             -a "$APP_ID" \
-                            -v "$NEW_VERSION" \
+                            -v "\$NEW_VERSION" \
                             -y ./app/docker-compose.prod.yml \
                             -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
                             -s 'hello-edge' \
@@ -109,16 +109,16 @@ node {
                             -r '/'
 
                         echo "----- Upload new app version ------"
-                        iectl publisher app-project version upload -a "$APP_ID" -v "$NEW_VERSION"
+                        iectl publisher app-project version upload -a "$APP_ID" -v "\$NEW_VERSION"
 
                         echo "----- Deploy app to Edge Device ------"
                         iectl iem app-project install \
                             -a "$APP_ID" \
-                            --version "$NEW_VERSION" \
+                            --version "\$NEW_VERSION" \
                             -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'
 
-                        echo "----- DONE! ------"    
-                    """
+                        echo "----- DONE! ------"
+                        """
                 }
 
                 /* Deploy the image to the edge device
