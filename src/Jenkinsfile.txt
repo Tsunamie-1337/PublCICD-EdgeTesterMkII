@@ -52,36 +52,21 @@ node {
                      """
                 }
                 
-                stage('Verify Tools in Container') {
-                    echo "Verifying tools inside the Docker container..."
-                    sh '''
-                        set -e
-                        echo "IECTL Version: $(iectl version)"
-                        echo "edge-cli Version: $(edge-cli version)" # Prüft auch edge-cli
-                        echo "jq Version: $(jq --version)"
-                    '''
-                }
+                stage('Deploy to Edge Device') {
+                    steps {
+                        sh """
+                            export IE_SKIP_CERTIFICATE=true
 
-                stage('Prepare Specific Device Group') {
-                    echo "Preparing device group for specific device: ${EDGE_DEVICE_ID}"
+                            # Optional: Login wenn nötig (ggf. User/Password/Token)
+                            # iectl login --url "$IEM_URL" --username "$USER_NAME" --password "$PSWD"
 
-                    sh '''
-                        set -e
-                        export IE_SKIP_CERTIFICATE=true
-
-                        # Login mit IECTL (läuft jetzt im Container)
-                        iectl login --url "$IEM_URL" --username "$USER_NAME" --password "$PSWD"
-                        DEVICE_GROUP_NAME="SingleDeviceGroup-${EDGE_DEVICE_ID}"
-                        # ... Der Rest bleibt gleich ...
-                    '''
-                    def props = readProperties file: 'group_id.env'
-                    env.TARGET_GROUP_ID = props.GROUP_ID
-                    echo "Target Group ID for deployment: ${env.TARGET_GROUP_ID}"
-                }
-
-                stage('Deploy Application to Specific Device Group') {
-                    echo "Deploying application ${APP_NAME} version ${VERSION} to specific device group ${env.TARGET_GROUP_ID}"
-                    sh "edge-cli iem app deploy --app-name ${APP_NAME} --version ${VERSION} --group-id ${env.TARGET_GROUP_ID} --target-version ${TARGET_VERSION}"
+                            # Deployment-Befehl auf das Edge Device
+                            iectl edge app install \
+                            --device-id "$EDGE_DEVICE_ID" \
+                            --app-id "$APP_ID" \
+                            --version "0.0.$BUILD_NUMBER"
+                        """
+                    }
                 }
                 /* Deploy the image to the edge device
                 stage('Deploy to Device') {
