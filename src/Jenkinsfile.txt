@@ -72,41 +72,36 @@ stage('Upload to IEM and deploy on Device') {
       # A flag for bash scripts to exit on error
       set -e
 
-        export DOCKER_HOST=tcp://docker:2375
+      # Prepare workspace
+      export DOCKER_HOST=tcp://docker:2375
+      cp -RT src/app /app/src/workspace
+      cd /app/src/workspace
 
-        # Prepare workspace
-        cp -RT src/app /app/src/workspace
-        ls -l
-        cd /app/src/workspace
+
+
+
 
       # App-ID (numerisch) und App-Name (wie im IEM angezeigt)
       APP_ID="$APP_ID"          # Numerische ID (z.B. für Install falls nötig)
       APP_NAME="CICDTestMkII"   # Setze hier den echten IEM-Namen deiner App!
+
+
+
+
+
+
+# Publisher-Konfiguration hinzufügen!
+iectl config add publisher \
+  --name publisher-dind \
+  --docker-engine-url tcp://docker:2375
+
+
 
       echo "----- IEM Login ------"
       export IE_SKIP_CERTIFICATE=true
       export EDGE_SKIP_TLS=1
       iectl config add iem --name "iemdev" --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
       
-
-
-
-
-
-echo "=========== docker-compose.prod.yml (cat) ==========="
-cat ./docker-compose.prod.yml
-echo "=========== docker-compose.prod.yml (validate) ======="
-docker-compose -f ./docker-compose.prod.yml config
-echo "======================================================"
-
-
-
-
-
-
-
-
-
       echo "----- Create new app version ------"
       iectl publisher app-project version create \
         -a "$APP_ID" \
