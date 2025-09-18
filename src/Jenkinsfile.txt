@@ -51,7 +51,7 @@ node {
                         sleep 20
                      """
                 }
-
+/*
                 stage('Deploy to Edge Device') {
                         sh """
                             export IE_SKIP_CERTIFICATE=true
@@ -65,17 +65,8 @@ node {
                         --app-id "$APP_ID" \
                         --version "0.0.$BUILD_NUMBER"
                     """
-                }
-            /* Deploy the image to the edge device
+                }*/
 
-                            # Deployment-Befehl auf das Edge Device
-                            iectl edge app install \
-                            --device-id "$EDGE_DEVICE_ID" \
-                            --app-id "$APP_ID" \
-                            --version "0.0.$BUILD_NUMBER"
-                        """
-                    }
-                }
                 /* Deploy the image to the edge device
                 stage('Deploy to Device') {
                     script {
@@ -149,6 +140,15 @@ node {
                         '''
                     }
                 }*/
+/*
+                stage('Cleanup Docker') {
+                    sh '''
+                    docker system prune -af || true
+                    docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi || true
+                    '''
+                }
+*/
+
             }        
         }
     }
