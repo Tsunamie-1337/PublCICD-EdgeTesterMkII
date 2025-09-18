@@ -76,6 +76,7 @@ stage('Upload to IEM and deploy on Device') {
 
         # Prepare workspace
         cp -RT src/app /app/src/workspace
+        ls -l
         cd /app/src/workspace
 
       # App-ID (numerisch) und App-Name (wie im IEM angezeigt)
