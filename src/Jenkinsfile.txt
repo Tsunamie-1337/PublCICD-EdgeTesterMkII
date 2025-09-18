@@ -75,7 +75,8 @@ stage('Upload to IEM and deploy on Device') {
       APP_ID="$APP_ID"          # Numerische ID (z.B. für Install falls nötig)
       APP_NAME="CICDTestMkII"   # Setze hier den echten IEM-Namen deiner App!
 
-      echo "----- IEM Config ------"
+      echo "----- IEM Login ------"
+      export EDGE_SKIP_TLS=1
       iectl config add iem --name "iemdev" --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
       
 
