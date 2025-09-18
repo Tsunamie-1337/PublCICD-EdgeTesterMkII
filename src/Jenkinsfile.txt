@@ -69,7 +69,14 @@ node {
 
 stage('Upload to IEM and deploy on Device') {
     sh '''
+      # A flag for bash scripts to exit on error
       set -e
+
+        export DOCKER_HOST=tcp://docker:2375
+
+        # Prepare workspace
+        cp -RT src/app /app/src/workspace
+        cd /app/src/workspace
 
       # App-ID (numerisch) und App-Name (wie im IEM angezeigt)
       APP_ID="$APP_ID"          # Numerische ID (z.B. für Install falls nötig)
@@ -103,7 +110,7 @@ echo "======================================================"
       iectl publisher app-project version create \
         -a "$APP_ID" \
         -v "0.0.${BUILD_NUMBER}" \
-        -y src/app/docker-compose.prod.yml \
+        -y ./app/docker-compose.prod.yml \
         -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
         -s 'hello-edge' \
         -t 'FromBoxReverseProxy' \
