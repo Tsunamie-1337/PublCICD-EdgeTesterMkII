@@ -140,15 +140,13 @@ node {
                         '''
                     }
                 }*/
-/*
+
                 stage('Cleanup Docker') {
                     sh '''
                     docker system prune -af || true
                     docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi || true
                     '''
                 }
-*/
-
             }        
         }
     }
