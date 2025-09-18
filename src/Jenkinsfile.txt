@@ -76,6 +76,7 @@ stage('Upload to IEM and deploy on Device') {
       APP_NAME="CICDTestMkII"   # Setze hier den echten IEM-Namen deiner App!
 
       echo "----- IEM Login ------"
+      export IE_SKIP_CERTIFICATE=true
       export EDGE_SKIP_TLS=1
       iectl config add iem --name "iemdev" --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
       
