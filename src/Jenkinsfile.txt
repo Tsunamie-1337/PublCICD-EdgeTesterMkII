@@ -1,7 +1,7 @@
 node {
     checkout scm
     withEnv(['HOME=.']) {          
-        docker.image('docker:24-dind').withRun('-p 2376:2375 --privileged -e DOCKER_TLS_CERTDIR=""') { c ->
+        docker.image('docker:24-dind').withRun('-p 2375:2375 --privileged -e DOCKER_TLS_CERTDIR=""') { c ->
             // Dynamic check for Dind-Daemon readiness
             // This script could be removed on stronger systems
             script {
@@ -119,6 +119,7 @@ stage('Upload to IEM and deploy on Device') {
 
                 stage('Cleanup Docker') {
                     sh '''
+                    docker ps -a | grep docker:24-dind | awk \'{print $1}\' | xargs -r docker rm -f
                     docker system prune -af || true
                     docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi || true
                     '''
