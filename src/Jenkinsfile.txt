@@ -107,7 +107,7 @@ stage('Upload to IEM and deploy on Device') {
       echo "----- IEM Login ------"
       export IE_SKIP_CERTIFICATE=true
       export EDGE_SKIP_TLS=1
-      iectl config add iem --name "iemdev" --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
+      iectl config add iem --name 'iemdev' --url "$IEM_URL" --user '$USER_NAME' --password '$PSWD'
 
 
 
