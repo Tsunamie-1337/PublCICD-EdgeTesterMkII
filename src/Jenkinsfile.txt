@@ -10,7 +10,7 @@ node {
 
                 for (int i = 0; i < 60; i++) {
                     try {
-                        sh "docker --host tcp://localhost:2376 info > /dev/null 2>&1"
+                        sh "docker --host tcp://localhost:2375 info > /dev/null 2>&1"
                         echo "Dind-Daemon is ready!"
                         dindReady = true
                         break 
