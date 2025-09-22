@@ -41,17 +41,17 @@ node {
                     # A flag for bash scripts to exit on error
                     set -e
 
-                    # Prepare workspace
+                    # Set Variables
+                    # Most Variables were set in Jenkins under Environment Variables
+                    APP_ID="$APP_ID"          # Numeric ID of the App being deployed
+                    APP_NAME="CICDTestMkII"   # Name of the App being deployed
+
+                    echo "----- Prepare workspace ------"
                     cp -RT src/app /app/src/workspace
                     cd /app/src/workspace
 
-                    # App-ID (numerisch) und App-Name (wie im IEM angezeigt)
-                    APP_ID="$APP_ID"          # Numerische ID (z.B. für Install falls nötig)
-                    APP_NAME="CICDTestMkII"   # Setze hier den echten IEM-Namen deiner App!
-
-                    # Set publisher configuration
                     echo "----- Set publisher configuration ------"
-                    iectl config add publisher --name "publisher-dind" --dockerurl "http://docker:2375" --workspace "/app/src/workspace"
+                    iectl config add publisher --name "publisher-dind" --dockerurl "http://docker:2375" --workspace "./workspace"
 
 
                     echo "----- IEM Login ------"
@@ -70,7 +70,7 @@ node {
                         -u 'hello-edge' \
                         -r '/'
 
-                    echo "----- Auf Edge Device deployen ------"
+                    echo "----- Deploy on edge device ------"
                     iectl iem app-project install \
                         -a "$APP_NAME" \
                         --version "0.0.${BUILD_NUMBER}" \
