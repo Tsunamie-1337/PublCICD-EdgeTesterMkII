@@ -35,83 +35,48 @@ node {
                         cd ..
                     """
                 }
-                // Push the image to the registry
-                /*
-                stage ('Upload') {
-                     sh """
-                        # export DOCKER_HOST=tcp://docker:2375 IS THAT NEEDED? LOOK INT THE BLOCK ABOVE!!
+                
+                stage('Upload to IEM and deploy on Device') {
+                    sh '''
+                    # A flag for bash scripts to exit on error
+                    set -e
 
-                        # Prepare workspace
-                        cp -RT src/app /app/src/workspace
-                        cd /app/src/workspace
+                    # Prepare workspace
+                    cp -RT src/app /app/src/workspace
+                    cd /app/src/workspace
 
-                        # Package the app
-                        ie-app-publisher-linux de c -u http://docker:2375
+                    # App-ID (numerisch) und App-Name (wie im IEM angezeigt)
+                    APP_ID="$APP_ID"          # Numerische ID (z.B. für Install falls nötig)
+                    APP_NAME="CICDTestMkII"   # Setze hier den echten IEM-Namen deiner App!
 
-                        # Login to IEM
-                        export IE_SKIP_CERTIFICATE=true
-                        ie-app-publisher-linux em li -u "$IEM_URL" -e $USER_NAME -p $PSWD
-
-                        # Upload the app
-                        ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
-                        ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
-                     """
-                }*/
-                        /*
-                        #Deploy the app on specific device
-                        ie-app-publisher-linux em app install \
-                        -n CICDTestMkII \
-                        -v 0.0.$BUILD_NUMBER \
-                        -d $EDGE_DEVICE_ID
-                        */
-
-                        //The current version of ie-app-publisher-linux does not app deployment in its CLI
-
-stage('Upload to IEM and deploy on Device') {
-    sh '''
-      # A flag for bash scripts to exit on error
-      set -e
-
-      # Prepare workspace
-      cp -RT src/app /app/src/workspace
-      cd /app/src/workspace
-
-      # App-ID (numerisch) und App-Name (wie im IEM angezeigt)
-      APP_ID="$APP_ID"          # Numerische ID (z.B. für Install falls nötig)
-      APP_NAME="CICDTestMkII"   # Setze hier den echten IEM-Namen deiner App!
-
-      # Set publisher configuration
-      echo "----- Set publisher configuration ------"
-      iectl config add publisher --name "publisher-dind" --dockerurl "http://docker:2375" --workspace "/app/src/workspace"
+                    # Set publisher configuration
+                    echo "----- Set publisher configuration ------"
+                    iectl config add publisher --name "publisher-dind" --dockerurl "http://docker:2375" --workspace "/app/src/workspace"
 
 
-      echo "----- IEM Login ------"
-      export IE_SKIP_CERTIFICATE=true
-      export EDGE_SKIP_TLS=1
-      iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
+                    echo "----- IEM Login ------"
+                    export IE_SKIP_CERTIFICATE=true
+                    export EDGE_SKIP_TLS=1
+                    iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
 
-      echo "----- Create new app version ------"
-      iectl publisher app-project version create \
-        -a "$APP_ID" \
-        -v "0.0.${BUILD_NUMBER}" \
-        -y ./docker-compose.prod.yml \
-        -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
-        -s 'hello-edge' \
-        -t 'FromBoxReverseProxy' \
-        -u 'hello-edge' \
-        -r '/'
+                    echo "----- Create new app version ------"
+                    iectl publisher app-project version create \
+                        -a "$APP_ID" \
+                        -v "0.0.${BUILD_NUMBER}" \
+                        -y ./docker-compose.prod.yml \
+                        -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
+                        -s 'hello-edge' \
+                        -t 'FromBoxReverseProxy' \
+                        -u 'hello-edge' \
+                        -r '/'
 
-      #echo "----- App-Version hochladen ------"
-      # iectl publisher app-project version upload -a "$APP_NAME" -v "0.0.${BUILD_NUMBER}"
-      
-
-      echo "----- Auf Edge Device deployen ------"
-      iectl iem app-project install \
-        -a "$APP_NAME" \
-        --version "0.0.${BUILD_NUMBER}" \
-        -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'
-    '''
-}
+                    echo "----- Auf Edge Device deployen ------"
+                    iectl iem app-project install \
+                        -a "$APP_NAME" \
+                        --version "0.0.${BUILD_NUMBER}" \
+                        -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'
+                    '''
+                }
 
                 stage('Cleanup Docker') {
                     sh '''
