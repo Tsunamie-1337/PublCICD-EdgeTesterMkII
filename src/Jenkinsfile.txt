@@ -43,8 +43,8 @@ node {
 
                     # Set Variables
                     # Most Variables were set in Jenkins under Environment Variables
-                    APP_ID="$APP_ID"          # Numeric ID of the App being deployed
-                    APP_NAME="CICDTestMkII"   # Name of the App being deployed
+                    #APP_ID="$APP_ID"          # Numeric ID of the App being deployed
+                    #APP_NAME="$APP_NAME"   # Name of the App being deployed
 
                     echo "----- Prepare workspace ------"
                     cp -RT src/app /app/src/workspace
