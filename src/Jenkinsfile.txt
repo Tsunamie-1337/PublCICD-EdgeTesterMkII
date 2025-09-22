@@ -71,9 +71,6 @@ node {
                         -u 'hello-edge' \
                         -r '/'
 
-
-
-
                     echo "----- Deploy on edge device ------"
                     iectl iem app-project install \
                         -a "$APP_NAME" \
