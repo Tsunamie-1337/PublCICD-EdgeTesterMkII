@@ -89,15 +89,14 @@ stage('Upload to IEM and deploy on Device') {
       # Publisher-Konfiguration setzen (WICHTIG!)
       iectl config add publisher --name "publisher-dind" --dockerurl tcp://docker:2375 --workspace /app/src/workspace
       
-      echo "----- IEM Login ------"
-      export IE_SKIP_CERTIFICATE=true
-      export EDGE_SKIP_TLS=1
-      iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
 
 # TEST
 iectl publisher docker-engine verify
 
-
+      echo "----- IEM Login ------"
+      export IE_SKIP_CERTIFICATE=true
+      export EDGE_SKIP_TLS=1
+      iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
 
       echo "----- Create new app version ------"
       iectl publisher app-project version create \
