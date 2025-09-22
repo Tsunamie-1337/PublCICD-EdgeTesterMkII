@@ -98,8 +98,8 @@ stage('Upload to IEM and deploy on Device') {
 
 
       # Debug for login failing
-      ping -c 3 192.168.56.4 || true
-      curl -vk https://192.168.56.4:443 || true
+      #ping -c 3 192.168.56.4 || true
+      # curl -vk https://192.168.56.4:443 || true
 
 
 
@@ -107,17 +107,8 @@ stage('Upload to IEM and deploy on Device') {
       echo "----- IEM Login ------"
       export IE_SKIP_CERTIFICATE=true
       export EDGE_SKIP_TLS=1
-      iectl config add iem --name 'iemdev' --url "$IEM_URL" --user '$USER_NAME' --password '$PSWD'
+      iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
 
-
-
-
-
-
-
-
-
-      
       echo "----- Create new app version ------"
       iectl publisher app-project version create \
         -a "$APP_ID" \
