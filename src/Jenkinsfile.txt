@@ -67,12 +67,6 @@ node {
 
                         //The current version of ie-app-publisher-linux does not app deployment in its CLI
 
-stage('Verify Docker engine') {
-    sh '''
-    curl http://docker:2375/version
-    '''
-}
-
 stage('Upload to IEM and deploy on Device') {
     sh '''
       # A flag for bash scripts to exit on error
@@ -91,7 +85,7 @@ stage('Upload to IEM and deploy on Device') {
       
 
 # TEST
-iectl publisher docker-engine verify
+iectl publisher docker-engine verify --url tcp://docker:2375
 
       echo "----- IEM Login ------"
       export IE_SKIP_CERTIFICATE=true
