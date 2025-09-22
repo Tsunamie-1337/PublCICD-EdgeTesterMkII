@@ -101,8 +101,8 @@ stage('Upload to IEM and deploy on Device') {
         -u 'hello-edge' \
         -r '/'
 
-      echo "----- App-Version hochladen ------"
-      iectl publisher app-project version upload -a "$APP_NAME" -v "0.0.${BUILD_NUMBER}"
+      #echo "----- App-Version hochladen ------"
+      # iectl publisher app-project version upload -a "$APP_NAME" -v "0.0.${BUILD_NUMBER}"
       
 
       echo "----- Auf Edge Device deployen ------"
