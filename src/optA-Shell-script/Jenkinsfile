@@ -3,7 +3,7 @@ node {
     withEnv(['HOME=.']) {          
                 stage ('Build') {
                     sh """
-                        cd src/optA-Shell-script/app
+                        cd src/optA-Shell-script/app  #FIX change back later to src/app
                         docker-compose build
                     """
                 }
@@ -19,8 +19,10 @@ node {
                     #APP_NAME="$APP_NAME"   # Name of the App being deployed
 
                     echo "----- Prepare workspace ------"
-                    cp -RT src/optA-Shell-script/app /app/src/workspace
-                    cd /app/src/workspace
+                    rm -rf workspace
+                    mkdir workspace
+                    cp -RT src/optA-Shell-script/app ./workspace #FIX change back later to src/app
+                    cd workspace
 
                     echo "----- Set publisher configuration ------"
                     iectl config add publisher --name "publisher-dind" --dockerurl "http://docker:2375" --workspace "./workspace"

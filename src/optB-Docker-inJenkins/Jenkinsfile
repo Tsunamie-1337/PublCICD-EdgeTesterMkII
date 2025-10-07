@@ -28,7 +28,7 @@ node {
             docker.image("${env.DOCKER_IMAGE_CLI}").inside("--link ${c.id}:docker --privileged -u root") {
                 stage ('Build') {
                     sh """
-                        cd src/optB-Docker-inJenkins
+                        cd src/app
                         export DOCKER_HOST=tcp://docker:2375
                         docker-compose build
                         docker images
