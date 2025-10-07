@@ -3,9 +3,8 @@ node {
     withEnv(['HOME=.']) {          
                 stage ('Build') {
                     sh """
-                        cd app
+                        cd src/optA-Shell-script/app
                         docker-compose build
-                        cd ..
                     """
                 }
                 
