@@ -5,6 +5,7 @@ node {
                     sh """
                         cd src/optA-Shell-script/app
                         export DOCKER_HOST=tcp://docker:2375
+                        ls
                         docker-compose build
                         docker images
                         cd ..
