@@ -1,0 +1,85 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #272525; /* Dunkler Hintergrund */
+    color: #ffffff; /* Weißer Text für bessere Sichtbarkeit */
+    margin: 0;
+    padding: 0;
+    display: flex; /* Flexbox aktivieren */
+    justify-content: center; /* Horizontal zentrieren */
+    align-items: center; /* Vertikal zentrieren */
+    height: 100vh; /* Volle Höhe des Viewports */
+    flex-direction: column; /* Elemente vertikal anordnen */
+}
+
+h1 {
+    color: #aa8b26;
+    margin-bottom: 20px;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Zentriert alles horizontal */
+    gap: 10px; /* Abstand zwischen Text und Brett */
+}
+
+#gameStatus {
+    color: #ffffff;
+    font-size: 1.2rem;
+    margin-bottom: 10px; /* Etwas Abstand zum Brett */
+}
+
+.board {
+    position: relative;
+    width: 500px;
+    height: 500px;
+}
+
+.cell {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background-color: #333; /* Dunkleres Grau für die leeren Zellen */
+    border: 2px solid #777; /* Grauer Rand */
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.cell.occupied {
+    cursor: grab;
+}
+
+.cell.removable {
+    border: 2px dashed #ffffff; /* Rot markierte Steine */
+    cursor: pointer;
+}
+
+.cell.selected {
+    border: 3px solid #4caf50; /* Grün für ausgewählte Steine */
+}
+
+svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 600px;
+    height: 600px;
+}
+
+line {
+    stroke: #693636; /* Weiße Linien für das Spielfeld */
+    stroke-width: 5;
+}
+
+/* NEUE CSS-Regeln für das Katzenbild */
+#catImage {
+    max-width: 400px; /* Maximale Breite des Bildes, anpassen nach Wunsch */
+    height: auto; /* Höhe automatisch anpassen, um Proportionen zu erhalten */
+    border-radius: 10px; /* Optional: leicht abgerundete Ecken */
+    margin-bottom: 20px; /* Abstand zwischen Bild und Überschrift */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Optional: leichter Schatten */
+}
