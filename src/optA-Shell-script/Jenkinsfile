@@ -3,7 +3,7 @@ node {
     withEnv(['HOME=.']) {          
                 stage ('Build') {
                     sh """
-                        cd src/app
+                        cd src/optA-Shell-script/app
                         export DOCKER_HOST=tcp://docker:2375
                         docker-compose build
                         docker images
@@ -53,7 +53,7 @@ node {
                         -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'
                     '''
                 }
-                
+
                 stage('Cleanup Docker') {
                     sh '''
                     docker ps -a | grep docker:24-dind | awk \'{print $1}\' | xargs -r docker rm -f
