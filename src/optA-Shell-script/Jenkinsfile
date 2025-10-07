@@ -1,31 +1,6 @@
 node {
     checkout scm
     withEnv(['HOME=.']) {          
-        docker.image('docker:24-dind').withRun('-p 2375:2375 --privileged -e DOCKER_TLS_CERTDIR=""') { c ->
-            // Dynamic check for Dind-Daemon readiness
-            // This script could be removed on stronger systems
-            script {
-                def dindReady = false
-                echo "Waiting for Dind-Daemon..."
-
-                for (int i = 0; i < 60; i++) {
-                    try {
-                        sh "docker --host tcp://localhost:2375 info > /dev/null 2>&1"
-                        echo "Dind-Daemon is ready!"
-                        dindReady = true
-                        break 
-                    } catch (Exception e) {
-                        echo "Dind-Daemon is not ready yet, trying again in 1 second... (${i+1}/60)"
-                        sleep 1 
-                    }
-                }
-
-                if (!dindReady) {
-                    error "Dind-Daemon is not ready in the expected timeframe."
-                }
-            }
-            //Start the Docker CLI inside the Dind container
-            docker.image("${env.DOCKER_IMAGE_CLI}").inside("--link ${c.id}:docker --privileged -u root") {
                 stage ('Build') {
                     sh """
                         cd src/app
@@ -78,7 +53,7 @@ node {
                         -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'
                     '''
                 }
-
+                
                 stage('Cleanup Docker') {
                     sh '''
                     docker ps -a | grep docker:24-dind | awk \'{print $1}\' | xargs -r docker rm -f
@@ -86,7 +61,6 @@ node {
                     docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi || true
                     '''
                 }
-            }        
-        }
-    }
-}
+    }        
+ }
+
