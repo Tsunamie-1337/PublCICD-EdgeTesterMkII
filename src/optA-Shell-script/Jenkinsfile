@@ -19,7 +19,7 @@ node {
                     #APP_NAME="$APP_NAME"   # Name of the App being deployed
 
                     echo "----- Prepare workspace ------"
-                    cp -RT src/app /app/src/workspace
+                    cp -RT src/optA-Shell-script/app /app/src/workspace
                     cd /app/src/workspace
 
                     echo "----- Set publisher configuration ------"
