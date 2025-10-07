@@ -3,11 +3,8 @@ node {
     withEnv(['HOME=.']) {          
                 stage ('Build') {
                     sh """
-                        cd src/optA-Shell-script/app
-                        export DOCKER_HOST=tcp://docker:2375
-                        ls
+                        cd app
                         docker-compose build
-                        docker images
                         cd ..
                     """
                 }
