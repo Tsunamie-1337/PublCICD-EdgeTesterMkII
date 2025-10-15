@@ -25,7 +25,8 @@ node {
                     cd workspace
 
                     echo "----- Set publisher configuration ------"
-                    iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "./workspace"
+                    # iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "./workspace" #FIX change back later to ./workspace
+                    iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "."
 
                     echo "----- IEM Login ------"
                     export IE_SKIP_CERTIFICATE=true
