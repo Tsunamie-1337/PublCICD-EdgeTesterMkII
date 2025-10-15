@@ -23,10 +23,10 @@ node {
                     mkdir workspace
                     cp -RT src/optA-Shell-script/app ./workspace #FIX change back later to src/app
                     cd workspace
+                    iectl publisher ws init
 
                     echo "----- Set publisher configuration ------"
                     iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "./workspace"
-                    iectl config list
 
                     echo "----- IEM Login ------"
                     export IE_SKIP_CERTIFICATE=true
