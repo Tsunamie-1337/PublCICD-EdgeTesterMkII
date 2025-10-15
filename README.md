@@ -5,6 +5,6 @@
 
 - Industrial Edge Device V 2.5.1-2
 - Industrial Edge Management V 1.14.9
-- VM - Debian GNU/Linux 12 (bookworm)
+- VM - Debian GNU/Linux 13 (bookworm)
 - Docker 28.4.0
 - Jenkins 2.516.2
