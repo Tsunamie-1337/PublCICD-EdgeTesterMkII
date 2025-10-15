@@ -25,7 +25,7 @@ node {
                     cd workspace
 
                     echo "----- Set publisher configuration ------"
-                    iectl config add publisher --name "publisher-dind" --dockerurl "http://docker:2375" --workspace "./workspace"
+                    iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "./workspace"
 
 
                     echo "----- IEM Login ------"
