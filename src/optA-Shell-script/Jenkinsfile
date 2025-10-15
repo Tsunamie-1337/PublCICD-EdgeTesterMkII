@@ -43,7 +43,7 @@ node {
 
                     echo "----- Create new app version ------"
                     iectl publisher app-project version create \
-                        -appid "$APP_ID" \
+                        --appid "$APP_ID" \
   
                         -v "0.0.${BUILD_NUMBER}" \
 
