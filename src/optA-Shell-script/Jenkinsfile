@@ -54,11 +54,11 @@ node {
                         -u 'hello-edge' \
                         -r '/'
 
-                    #echo "----- Deploy on edge device ------"
-                    #iectl iem app-project install \
-                    #    -a "$APP_NAME" \
-                    #    --version "0.0.${BUILD_NUMBER}" \
-                    #    -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'
+                    echo "----- Deploy on edge device ------"
+                    iectl iem app-project install \
+                        -a "$APP_NAME" \
+                        --version "0.0.${BUILD_NUMBER}" \
+                        -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'                    
                     '''
                 }
 
