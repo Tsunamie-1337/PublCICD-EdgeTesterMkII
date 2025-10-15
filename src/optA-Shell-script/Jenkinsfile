@@ -42,9 +42,12 @@ node {
                     iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
 
                     echo "----- Create new app version ------"
+                    # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details" \
+                    # -y ./docker-compose.prod.yml \
                     iectl publisher app-project version create \
                         -a "$APP_ID" \
                         -v "0.0.${BUILD_NUMBER}" \
+                        # test comment \
                         -y ./src/optA-Shell-script/app/docker-compose.prod.yml \
                         -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
                         -s 'hello-edge' \
