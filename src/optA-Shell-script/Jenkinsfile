@@ -22,7 +22,15 @@ node {
                     rm -rf workspace
                     mkdir workspace
                     cp -RT src/optA-Shell-script/app ./workspace #FIX change back later to src/app
+                    #debug info
+                    ls -la ./workspace
+                    #debug info end
                     cd workspace
+
+                    # debug info
+                    pwd
+                    ls -la
+                    # debug info end
 
                     echo "----- Set publisher configuration ------"
                     # iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "./workspace" #FIX change back later to ./workspace
