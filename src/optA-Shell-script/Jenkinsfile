@@ -43,10 +43,8 @@ node {
 
                     echo "----- Create new app version ------"
                     iectl publisher app-project version create \
-                        --app-id "$APP_ID" \
-  
+                        -a "$APP_ID" \
                         -v "0.0.${BUILD_NUMBER}" \
-
                         -y ./src/optA-Shell-script/app/docker-compose.prod.yml \
                         -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
                         -s 'hello-edge' \
