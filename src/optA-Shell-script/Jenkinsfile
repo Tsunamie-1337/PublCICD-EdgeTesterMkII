@@ -54,26 +54,11 @@ node {
                         -u 'hello-edge' \
                         -r '/'
 
-                    #iectl publisher app-project version create \
-                    #-a "$APP_ID" \
-                    #-v $NEW_VERSION \
-                    #-y ./docker-compose.prod.yml \
-                    #-n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
-                    #-s 'hello-edge' \
-                    #-t 'FromBoxReverseProxy' \
-                    #-u "hello-edge" \
-                    #-r "/"
-
-
-
-
-
-
-                    echo "----- Deploy on edge device ------"
-                    iectl iem app-project install \
-                        -a "$APP_NAME" \
-                        --version "0.0.${BUILD_NUMBER}" \
-                        -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'
+                    #echo "----- Deploy on edge device ------"
+                    #iectl iem app-project install \
+                    #    -a "$APP_NAME" \
+                    #    --version "0.0.${BUILD_NUMBER}" \
+                    #    -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'
                     '''
                 }
 
