@@ -81,6 +81,7 @@ iectl iem app-project app-details --app-id "$APP_ID" || iectl iem app-project ap
 tree
 # tests end
 
+                    cd "$app_PROJECT_PATH_PREFIX/workspace"
                     echo "----- Upload app version to IEM ------"
                     iectl publisher app-project upload catalog \
                         --appname $APP_NAME \
