@@ -8,7 +8,7 @@ node {
     withEnv(['HOME=.']) {          
                 stage ('Build') {
                     sh """
-                        cd "$PROJECT_PATH_PREFIX/app"  #FIX change back later to src/app
+                        cd "$PROJECT_PATH_PREFIX/app"
                         docker-compose build
                     """
                 }
@@ -32,7 +32,8 @@ node {
                     echo "----- init workspace and copy app files -----"
                     #iectl publisher workspace init
                     cp -RT "$PROJECT_PATH_PREFIX/app" "$PROJECT_PATH_PREFIX/workspace"              
-
+                    cd "$PROJECT_PATH_PREFIX/workspace"
+                    
                     echo "----- IEM Login ------"
                     iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
 
