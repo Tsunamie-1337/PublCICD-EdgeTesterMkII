@@ -54,6 +54,44 @@ node {
                         -u 'JenkinsCICD-Demo' \
                         -r '/'
 
+
+
+
+
+                    # temp stuff
+                    CREATE_EXIT_CODE=$?
+                    set -e
+
+                    echo "----- DEBUG: create output START -----"
+                    echo "$CREATE_OUTPUT"
+                    echo "----- DEBUG: create output END -----"
+                    echo "DEBUG: create exit code = $CREATE_EXIT_CODE"
+
+                    if [ "$CREATE_EXIT_CODE" -ne 0 ]; then
+                    echo "ERROR: iectl publisher app-project version create failed. See output above."
+                    exit 1
+                    fi
+
+                    APP_DETAILS=$(iectl iem app-project app-details --project-name "$PROJECT_NAME" --app-name "JenkinsCICD-Demo" 2>&1) || true
+                    echo "----- DEBUG: app-details START -----"
+                    echo "$APP_DETAILS"
+                    echo "----- DEBUG: app-details END -----"
+
+                    # Versionsliste (falls JSON valide)
+                    echo "Versions in IEM for JenkinsCICD-Demo:"
+                    echo "$APP_DETAILS" | jq -r '.versions[]?.versionNumber' || echo "No versions or jq missing/invalid JSON"
+
+                    echo "appId from IEM:"
+                    echo "$APP_DETAILS" | jq -r '.appId // "NOT_FOUND"' || true
+                    echo "Configured APP_ID in Jenkins: $APP_ID"
+                    # temp stuff end
+
+
+
+
+
+
+
                     #echo "----- Deploy on edge device ------"
                     #iectl iem app-project install \
                     #    -a "$APP_NAME" \
