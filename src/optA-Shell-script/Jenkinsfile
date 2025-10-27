@@ -25,13 +25,14 @@ node {
                     echo "----- Prepare workspace ------"
                     rm -rf "$PROJECT_PATH_PREFIX/workspace"
                     mkdir "$PROJECT_PATH_PREFIX/workspace"
-                    cp -RT "$PROJECT_PATH_PREFIX/app" "$PROJECT_PATH_PREFIX/workspace" #FIX change back later to src/app
+                    #cp -RT "$PROJECT_PATH_PREFIX/app" "$PROJECT_PATH_PREFIX/workspace"
+                    cp -a "$PROJECT_PATH_PREFIX"/app/. "$PUBLISHER_WS"/
 
                     echo "----- Set publisher configuration ------"
                     iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "$PROJECT_PATH_PREFIX/workspace"
 
                     # init workspace and copy app files
-                    iectl publisher workspace init
+                    # iectl publisher workspace init
 
                     echo "----- IEM Login ------"
                     iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
