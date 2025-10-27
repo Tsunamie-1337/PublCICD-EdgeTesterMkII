@@ -48,41 +48,11 @@ node {
                         -u 'JenkinsCICD-Demo' \
                         -r '/'
 
-# maaaany tests
-
-# Zeige die Variablen (prüft, ob sie gesetzt sind)
-echo "APP_NAME=[$APP_NAME]"
-echo "APP_ID=[$APP_ID]"
-echo "BUILD_NUMBER=[$BUILD_NUMBER]"
-echo "PROJECT_PATH_PREFIX=[$PROJECT_PATH_PREFIX]"
-echo "PUBLISHER_WS=[$PUBLISHER_WS]"
-
-# Prüfe Inhalt des Publisher-Workspaces (muss docker-compose.prod.yml enthalten)
-ls -la "$PUBLISHER_WS" || ls -la "$PROJECT_PATH_PREFIX/workspace"
-
-# Prüfe die publisher-Konfiguration und die iem-Konfiguration
-iectl config list
-iectl config show publisher
-iectl config show iem
-
-# Liste die Apps im Publisher-Kontext (verfügbar zum Upload / Version erstellen)
-iectl publisher app-project list --verbose || iectl publisher app-project list
-
-# Liste die Apps in der IEM (um zu prüfen, ob App bereits in IEM existiert)
-iectl iem app-project list --verbose || iectl iem app-project list
-
-# Optional: Details zur konkreten App (wenn du APP_ID oder -Name hast)
-iectl iem app-project app-details --app-id "$APP_ID" || iectl iem app-project app-details --project-name "$APP_NAME" --app-name "$APP_NAME"
-
-# Wiederhole Upload mit verbose-Flag, damit iectl mehr Infos ausgibt
-#iectl --verbose publisher app-project upload catalog --appname "$APP_NAME" -v "0.0.${BUILD_NUMBER}"
-
-tree
-# tests end
                     echo "----- Upload app version to IEM ------"
-                    iectl publisher app-project upload catalog \
-                        --appname $APP_NAME \
-                        -v "0.0.${BUILD_NUMBER}"
+                    iectl publisher standalone-app version export \
+                        --appname "$APP_NAME" \
+                        --versionnumber "0.0.${BUILD_NUMBER}" \
+                        --exportpath "app_export"
 
                     echo "----- Deploy on edge device ------"
                     iectl iem app-project install \
