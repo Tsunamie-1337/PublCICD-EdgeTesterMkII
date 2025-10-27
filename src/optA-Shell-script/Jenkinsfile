@@ -34,7 +34,8 @@ node {
                     echo "----- init workspace and copy app files -----"
                     iectl publisher workspace init
                     cp -RT "$PROJECT_PATH_PREFIX/app" "$PROJECT_PATH_PREFIX/workspace"
-                
+                    ls -la                
+
                     echo "----- IEM Login ------"
                     iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
 
