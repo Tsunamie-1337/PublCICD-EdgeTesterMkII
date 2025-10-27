@@ -30,6 +30,12 @@ node {
                     # debug info
                     pwd
                     ls -la
+                    echo "DEBUG: WORKSPACE variable present? ${WORKSPACE:+yes}"
+                    echo "DEBUG: WORKSPACE='$WORKSPACE'"
+
+                    # Falls $WORKSPACE nicht gesetzt ist, nimm das aktuelle Verzeichnis als absolute Pfad:
+                    PWD_ABS="${WORKSPACE:-$(pwd)}"
+                    echo "DEBUG: using absolute workspace: $PWD_ABS"
                     # debug info end
 
                     echo "----- Set publisher configuration ------"
@@ -49,6 +55,12 @@ node {
                     echo "DEBUG: BUILD_NUMBER='$BUILD_NUMBER'"
                     iectl --version 2>&1 || true
                     which iectl || true
+                    echo "DEBUG: WORKSPACE variable present? ${WORKSPACE:+yes}"
+                    echo "DEBUG: WORKSPACE='$WORKSPACE'"
+
+                    # Falls $WORKSPACE nicht gesetzt ist, nimm das aktuelle Verzeichnis als absolute Pfad:
+                    PWD_ABS="${WORKSPACE:-$(pwd)}"
+                    echo "DEBUG: using absolute workspace: $PWD_ABS"
                     # debug info end
 
 
