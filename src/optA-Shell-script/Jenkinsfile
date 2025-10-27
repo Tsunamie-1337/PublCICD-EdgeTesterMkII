@@ -28,7 +28,7 @@ node {
                     #cp -RT "$PROJECT_PATH_PREFIX/app" "$PROJECT_PATH_PREFIX/workspace" #FIX change back later to src/app
 
                     echo "----- Set publisher configuration ------"
-                    iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "PROJECT_PATH_PREFIX/workspace"
+                    iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "$PROJECT_PATH_PREFIX/workspace"
 
                     # init workspace and copy app files
                     iectl publisher workspace init
