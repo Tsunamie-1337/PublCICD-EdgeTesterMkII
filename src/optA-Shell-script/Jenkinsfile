@@ -48,7 +48,8 @@ node {
                         -u 'JenkinsCICD-Demo' \
                         -r '/'
 
-# maaaany teste
+# maaaany test
+
 # Zeige die Variablen (prüft, ob sie gesetzt sind)
 echo "APP_NAME=[$APP_NAME]"
 echo "APP_ID=[$APP_ID]"
@@ -75,6 +76,7 @@ iectl iem app-project app-details --app-id "$APP_ID" || iectl iem app-project ap
 
 # Wiederhole Upload mit verbose-Flag, damit iectl mehr Infos ausgibt
 iectl --verbose publisher app-project upload catalog --appname "$APP_NAME" -v "0.0.${BUILD_NUMBER}"
+
 # tests end
 
 
