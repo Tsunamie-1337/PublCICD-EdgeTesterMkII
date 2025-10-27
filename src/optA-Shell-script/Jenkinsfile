@@ -30,7 +30,6 @@ node {
                     mkdir "$PROJECT_PATH_PREFIX/workspace"
                 
                     echo "----- init workspace and copy app files -----"
-                    cd "$PROJECT_PATH_PREFIX/workspace"
                     iectl publisher workspace init
                     cp -RT "$PROJECT_PATH_PREFIX/app" "$PROJECT_PATH_PREFIX/workspace"              
                     tree
