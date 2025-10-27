@@ -10,23 +10,23 @@ node {
                 
                 stage('Upload to IEM and deploy on Device') {
                     sh '''
+                    # Set Absolute Path to src files here
+                    PROJECT_PATH_PREFIX="src/optA-Shell-script"
+
                     # A flag for bash scripts to exit on error
                     set -e
 
                     # Set environment variables
-                    # Most Variables were set in Jenkins under Environment Variables
-                    #APP_ID="$APP_ID"          # Numeric ID of the App being deployed
-                    #APP_NAME="$APP_NAME"   # Name of the App being deployed
                     export IE_SKIP_CERTIFICATE=true
                     export EDGE_SKIP_TLS=1
 
                     echo "----- Prepare workspace ------"
                     rm -rf workspace
                     mkdir workspace
-                    #cp -RT src/optA-Shell-script/app ./workspace #FIX change back later to src/app
+                    #cp -RT PROJECT_PATH_PREFIX/app ./workspace #FIX change back later to src/app
 
                     echo "----- Set publisher configuration ------"
-                    iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "./workspace"
+                    iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "PROJECT_PATH_PREFIX/workspace"
 
                     # init workspace and copy app files
                     iectl publisher workspace init
@@ -39,18 +39,18 @@ node {
                     iectl publisher app-project version create \
                         -a "$APP_ID" \
                         -v "0.0.${BUILD_NUMBER}" \
-                        -y ./docker-compose.prod.yml \
+                        -y PROJECT_PATH_PREFIX/app/docker-compose.prod.yml \
                         -n '{"JenkinsCICD-Demo":[{"name":"JenkinsCICD-Demo","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
                         -s 'JenkinsCICD-Demo' \
                         -t 'FromBoxReverseProxy' \
                         -u 'JenkinsCICD-Demo' \
                         -r '/'
 
-                    #echo "----- Deploy on edge device ------"
-                    #iectl iem app-project install \
-                    #    -a "$APP_NAME" \
-                    #    --version "0.0.${BUILD_NUMBER}" \
-                    #    -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'                    
+                    echo "----- Deploy on edge device ------"
+                    iectl iem app-project install \
+                        -a "$APP_NAME" \
+                       --version "0.0.${BUILD_NUMBER}" \
+                        -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'                    
                     '''
                 }
 
