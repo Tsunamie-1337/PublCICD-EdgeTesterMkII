@@ -43,8 +43,12 @@ node {
 
 
                     # debug info
-                    echo "DEBUG: PROJECT_NAME='$PROJECT_NAME'"
+                    echo "DEBUG: PROJECT_NAME='$APP_NAME'"
                     echo "DEBUG: APP_ID='$APP_ID'"
+                    iectl config list 2>&1 || true
+                    echo "DEBUG: BUILD_NUMBER='$BUILD_NUMBER'"
+                    iectl --version 2>&1 || true
+                    which iectl || true
                     # debug info end
 
 
@@ -66,6 +70,9 @@ node {
 
 
                     # temp stuff
+                    APP_DETAILS=$(iectl iem app-project app-details --project-name "$PROJECT_NAME" --app-name "JenkinsCICD-Demo" 2>&1) || true
+                    echo "DEBUG: app-details:"
+                    echo "$APP_DETAILS"
                     CREATE_OUTPUT=$(iectl publisher app-project version create \
                     -a "$APP_ID" \
                     -v "0.0.${BUILD_NUMBER}" \
