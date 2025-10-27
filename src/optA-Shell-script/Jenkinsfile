@@ -13,10 +13,12 @@ node {
                     # A flag for bash scripts to exit on error
                     set -e
 
-                    # Set Variables
+                    # Set environment variables
                     # Most Variables were set in Jenkins under Environment Variables
                     #APP_ID="$APP_ID"          # Numeric ID of the App being deployed
                     #APP_NAME="$APP_NAME"   # Name of the App being deployed
+                    export IE_SKIP_CERTIFICATE=true
+                    export EDGE_SKIP_TLS=1
 
                     echo "----- Prepare workspace ------"
                     rm -rf workspace
@@ -24,19 +26,12 @@ node {
                     #cp -RT src/optA-Shell-script/app ./workspace #FIX change back later to src/app
 
                     echo "----- Set publisher configuration ------"
-                    # iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "./workspace" #FIX change back later to ./workspace
                     iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "./workspace"
 
-
-                    #working
                     # init workspace and copy app files
                     iectl publisher workspace init
-                    #working end
-
 
                     echo "----- IEM Login ------"
-                    export IE_SKIP_CERTIFICATE=true
-                    export EDGE_SKIP_TLS=1
                     iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
 
                     echo "----- Create new app version ------"
