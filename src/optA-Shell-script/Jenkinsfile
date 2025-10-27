@@ -9,7 +9,7 @@ node {
                 }
                 
  stage('Upload to IEM and deploy') {
-  withCredentials([usernamePassword(credentialsId: 'iem-creds', usernameVariable: 'IEM_USER', passwordVariable: 'IEM_PW')]) {
+  withCredentials([usernamePassword(credentialsId: 'PSWD', usernameVariable: 'USER_NAME', passwordVariable: 'PSWD')]) {
     sh '''
       set -e
 
