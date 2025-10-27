@@ -1,18 +1,20 @@
 node {
+
+    //Set Absolute Path to src files here
+    env.PROJECT_PATH_PREFIX="src/optA-Shell-script"
+
+
     checkout scm
     withEnv(['HOME=.']) {          
                 stage ('Build') {
                     sh """
-                        cd src/optA-Shell-script/app  #FIX change back later to src/app
+                        cd "$PROJECT_PATH_PREFIX/app"  #FIX change back later to src/app
                         docker-compose build
                     """
                 }
                 
                 stage('Upload to IEM and deploy on Device') {
                     sh '''
-                    # Set Absolute Path to src files here
-                    PROJECT_PATH_PREFIX="src/optA-Shell-script"
-
                     # A flag for bash scripts to exit on error
                     set -e
 
@@ -23,7 +25,7 @@ node {
                     echo "----- Prepare workspace ------"
                     rm -rf workspace
                     mkdir workspace
-                    #cp -RT PROJECT_PATH_PREFIX/app ./workspace #FIX change back later to src/app
+                    #cp -RT $PROJECT_PATH_PREFIX/app ./workspace #FIX change back later to src/app
 
                     echo "----- Set publisher configuration ------"
                     iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "PROJECT_PATH_PREFIX/workspace"
@@ -39,7 +41,7 @@ node {
                     iectl publisher app-project version create \
                         -a "$APP_ID" \
                         -v "0.0.${BUILD_NUMBER}" \
-                        -y PROJECT_PATH_PREFIX/app/docker-compose.prod.yml \
+                        -y "$PROJECT_PATH_PREFIX/app/docker-compose.prod.yml" \
                         -n '{"JenkinsCICD-Demo":[{"name":"JenkinsCICD-Demo","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
                         -s 'JenkinsCICD-Demo' \
                         -t 'FromBoxReverseProxy' \
