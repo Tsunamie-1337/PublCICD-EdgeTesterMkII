@@ -46,6 +46,11 @@ node {
                         -u 'JenkinsCICD-Demo' \
                         -r '/'
 
+                    echo "----- Upload app version to IEM ------"
+                    iectl publisher app-project upload catalog \
+                        --appname $APP_NAME \
+                        -v "0.0.${BUILD_NUMBER}"
+
                     echo "----- Deploy on edge device ------"
                     iectl iem app-project install \
                         -a "$APP_NAME" \
