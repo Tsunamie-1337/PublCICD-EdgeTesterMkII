@@ -28,6 +28,7 @@ node {
                     echo "----- Prepare workspace ------"
                     rm -rf "$PROJECT_PATH_PREFIX/workspace"
                     mkdir "$PROJECT_PATH_PREFIX/workspace"
+                    cd "$PROJECT_PATH_PREFIX/workspace"
                 
                     echo "----- init workspace and copy app files -----"
                     iectl publisher workspace init
@@ -48,7 +49,7 @@ node {
                         -u 'JenkinsCICD-Demo' \
                         -r '/'
 
-# maaaany test
+# maaaany tests
 
 # Zeige die Variablen (prüft, ob sie gesetzt sind)
 echo "APP_NAME=[$APP_NAME]"
