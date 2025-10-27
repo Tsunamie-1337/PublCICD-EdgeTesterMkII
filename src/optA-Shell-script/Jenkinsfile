@@ -8,54 +8,61 @@ node {
                     """
                 }
                 
-                stage('Upload to IEM and deploy on Device') {
-                    sh '''
-                    # A flag for bash scripts to exit on error
-                    set -e
+ stage('Upload to IEM and deploy') {
+  withCredentials([usernamePassword(credentialsId: 'iem-creds', usernameVariable: 'IEM_USER', passwordVariable: 'IEM_PW')]) {
+    sh '''
+      set -e
 
-                    # Set Variables
-                    # Most Variables were set in Jenkins under Environment Variables
-                    #APP_ID="$APP_ID"          # Numeric ID of the App being deployed
-                    #APP_NAME="$APP_NAME"   # Name of the App being deployed
+      echo "----- Prepare workspace -----"
+      rm -rf workspace
+      mkdir workspace
+      cp -RT src/optA-Shell-script/app ./workspace
+      cd workspace
 
-                    echo "----- Prepare workspace ------"
-                    rm -rf workspace
-                    mkdir workspace
-                    cp -RT src/optA-Shell-script/app ./workspace #FIX change back later to src/app
-                    #debug info
-                    ls -la ./workspace
-                    #debug info end
-                    cd workspace
+      # ensure dirs referenced by docker-compose.prod.yml exist
+      mkdir -p publish cfg-data html
 
-                    echo "----- Set publisher configuration ------"
-                    # iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "./workspace" #FIX change back later to ./workspace
-                    iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "./workspace"
+      # set publisher workspace to the real absolute path
+      PUBLISHER_WS="$(pwd)"
+      echo "DEBUG: publisher workspace = $PUBLISHER_WS"
+      iectl config add publisher --name "publisherdev" --dockerurl "http://127.0.0.1:2375" --workspace "$PUBLISHER_WS"
 
-                    echo "----- IEM Login ------"
-                    export IE_SKIP_CERTIFICATE=true
-                    export EDGE_SKIP_TLS=1
-                    iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
+      # optional: init workspace metadata for iectl
+      iectl publisher workspace init || true
 
-                    echo "----- Create new app version ------"
-                    # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details" \
-                    # -y ./docker-compose.prod.yml \
-                    iectl publisher app-project version create \
-                        -a "$APP_ID" \
-                        -v "0.0.${BUILD_NUMBER}" \
-                        -y ./docker-compose.prod.yml \
-                        -n '{"JenkinsCICD-Demo":[{"name":"JenkinsCICD-Demo","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
-                        -s 'JenkinsCICD-Demo' \
-                        -t 'FromBoxReverseProxy' \
-                        -u 'JenkinsCICD-Demo' \
-                        -r '/'
+      echo "----- IEM login (secure) -----"
+      export IE_SKIP_CERTIFICATE=true
+      export EDGE_SKIP_TLS=1
+      # use stdin to avoid password on commandline
+      echo "$IEM_PW" | iectl config add iem --name "iemdev" --url "$IEM_URL" --user "$IEM_USER" --password-stdin
 
-                    #echo "----- Deploy on edge device ------"
-                    #iectl iem app-project install \
-                    #    -a "$APP_NAME" \
-                    #    --version "0.0.${BUILD_NUMBER}" \
-                    #    -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'                    
-                    '''
-                }
+      # get new version (example: increment patch from IEM; fallback to BUILD_NUMBER)
+      OLD_VERSION=$(iectl iem app-project app-details --project-name "$PROJECT_NAME" --app-name "$APP_NAME" 2>/dev/null | jq -r '.versions[0].versionNumber // "0.0.0"')
+      IFS='.' read -r -a parts <<< "$OLD_VERSION"
+      parts[2]=$(( ${parts[2]:-0} + 1 ))
+      NEW_VERSION="${parts[0]}.${parts[1]}.${parts[2]}"
+      echo "DEBUG: new version = $NEW_VERSION"
+
+      echo "----- Create new app version -----"
+      CREATE_OUTPUT=$(iectl publisher app-project version create \
+        -a "$APP_ID" \
+        -v "$NEW_VERSION" \
+        -y ./docker-compose.prod.yml \
+        -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
+        -s 'hello-edge' -t 'FromBoxReverseProxy' -u 'hello-edge' -r '/' 2>&1) || true
+      echo "CREATE_OUTPUT: $CREATE_OUTPUT"
+
+      # check if create succeeded (simple heuristic)
+      echo "$CREATE_OUTPUT" | grep -i "Error" && { echo "IECTL create failed"; exit 1; } || echo "IECTL create seems OK"
+
+      # optional: install to device
+      iectl iem app-project install -a "$APP_NAME" --version "$NEW_VERSION" --info-map "{\"devices\":[\"$DEVICE_ID\"]}" || true
+
+      # debug final config
+      iectl config list | sed -n '/publisher/,/configtype/p'
+    '''
+  }
+}
 
                 stage('Cleanup Docker') {
                     sh '''
