@@ -29,6 +29,7 @@ node {
                     rm -rf "$PROJECT_PATH_PREFIX/workspace"
                     mkdir "$PROJECT_PATH_PREFIX/workspace"
                     cd "$PROJECT_PATH_PREFIX/workspace"
+                    ls -la
                 
                     echo "----- init workspace and copy app files -----"
                     iectl publisher workspace init
@@ -48,10 +49,6 @@ node {
                         -t 'FromBoxReverseProxy' \
                         -u 'JenkinsCICD-Demo' \
                         -r '/'
-
-
-
-
 
                     echo "----- Upload app version to IEM ------"
                     iectl publisher app-project upload catalog \
