@@ -27,42 +27,14 @@ node {
                     #debug info end
                     cd workspace
 
-                    # debug info
-                    pwd
-                    ls -la
-                    echo "DEBUG: WORKSPACE variable present? ${WORKSPACE:+yes}"
-                    echo "DEBUG: WORKSPACE='$WORKSPACE'"
-
-                    # Falls $WORKSPACE nicht gesetzt ist, nimm das aktuelle Verzeichnis als absolute Pfad:
-                    PWD_ABS="${WORKSPACE:-$(pwd)}"
-                    echo "DEBUG: using absolute workspace: $PWD_ABS"
-                    # debug info end
-
                     echo "----- Set publisher configuration ------"
                     # iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "./workspace" #FIX change back later to ./workspace
-                    iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "$PUBLISHER_WS"
+                    iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "./workspace"
 
                     echo "----- IEM Login ------"
                     export IE_SKIP_CERTIFICATE=true
                     export EDGE_SKIP_TLS=1
                     iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
-
-
-                    # debug info
-                    echo "DEBUG: PROJECT_NAME='$APP_NAME'"
-                    echo "DEBUG: APP_ID='$APP_ID'"
-                    iectl config list 2>&1 || true
-                    echo "DEBUG: BUILD_NUMBER='$BUILD_NUMBER'"
-                    iectl --version 2>&1 || true
-                    which iectl || true
-                    echo "DEBUG: WORKSPACE variable present? ${WORKSPACE:+yes}"
-                    echo "DEBUG: WORKSPACE='$WORKSPACE'"
-
-                    # Falls $WORKSPACE nicht gesetzt ist, nimm das aktuelle Verzeichnis als absolute Pfad:
-                    PWD_ABS="${WORKSPACE:-$(pwd)}"
-                    echo "DEBUG: using absolute workspace: $PWD_ABS"
-                    # debug info end
-
 
                     echo "----- Create new app version ------"
                     # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details" \
@@ -76,54 +48,6 @@ node {
                         -t 'FromBoxReverseProxy' \
                         -u 'JenkinsCICD-Demo' \
                         -r '/'
-
-
-
-
-
-                    # temp stuff
-                    APP_DETAILS=$(iectl iem app-project app-details --project-name "$PROJECT_NAME" --app-name "JenkinsCICD-Demo" 2>&1) || true
-                    echo "DEBUG: app-details:"
-                    echo "$APP_DETAILS"
-                    CREATE_OUTPUT=$(iectl publisher app-project version create \
-                    -a "$APP_ID" \
-                    -v "0.0.${BUILD_NUMBER}" \
-                    -y ./docker-compose.prod.yml \
-                    -n '{"JenkinsCICD-Demo":[{"name":"JenkinsCICD-Demo","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
-                    -s 'JenkinsCICD-Demo' \
-                    -t 'FromBoxReverseProxy' \
-                    -u 'JenkinsCICD-Demo' \
-                    -r '/' 2>&1)
-                    CREATE_EXIT_CODE=$?
-                    set -e
-
-                    echo "----- DEBUG: create output START -----"
-                    echo "$CREATE_OUTPUT"
-                    echo "----- DEBUG: create output END -----"
-                    echo "DEBUG: create exit code = $CREATE_EXIT_CODE"
-
-                    if [ "$CREATE_EXIT_CODE" -ne 0 ]; then
-                    echo "ERROR: iectl publisher app-project version create failed. See output above."
-                    exit 1
-                    fi
-
-                    # Prüfen der App-Details (mit PROJECT_NAME!)
-                    if [ -z "$PROJECT_NAME" ]; then
-                    echo "ERROR: PROJECT_NAME is empty. Please set PROJECT_NAME in Jenkins environment or export it."
-                    exit 1
-                    fi
-
-                    APP_DETAILS=$(iectl iem app-project app-details --project-name "$PROJECT_NAME" --app-name "JenkinsCICD-Demo" 2>&1) || true
-                    echo "----- DEBUG: app-details START -----"
-                    echo "$APP_DETAILS"
-                    echo "----- DEBUG: app-details END -----"
-                    # temp stuff end
-
-
-
-
-
-
 
                     #echo "----- Deploy on edge device ------"
                     #iectl iem app-project install \
