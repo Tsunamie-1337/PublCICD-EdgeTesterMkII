@@ -28,13 +28,10 @@ node {
                     echo "----- Prepare workspace ------"
                     rm -rf "$PROJECT_PATH_PREFIX/workspace"
                     mkdir "$PROJECT_PATH_PREFIX/workspace"
-                    #cd "$PROJECT_PATH_PREFIX/workspace"
-                    tree
                 
                     echo "----- init workspace and copy app files -----"
                     #iectl publisher workspace init
-                    cp -RT "$PROJECT_PATH_PREFIX/app" "$PROJECT_PATH_PREFIX/workspace"
-                    tree              
+                    cp -RT "$PROJECT_PATH_PREFIX/app" "$PROJECT_PATH_PREFIX/workspace"              
 
                     echo "----- IEM Login ------"
                     iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
@@ -75,7 +72,7 @@ iectl publisher app-project list --verbose || iectl publisher app-project list
 iectl iem app-project list --verbose || iectl iem app-project list
 
 # Optional: Details zur konkreten App (wenn du APP_ID oder -Name hast)
-iectl iem app-project app-details --app-id "$APP_ID" || iectl iem app-project app-details --project-name "<proj>" --app-name "$APP_NAME"
+iectl iem app-project app-details --app-id "$APP_ID" || iectl iem app-project app-details --project-name "$APP_NAME"
 
 # Wiederhole Upload mit verbose-Flag, damit iectl mehr Infos ausgibt
 iectl --verbose publisher app-project upload catalog --appname "$APP_NAME" -v "0.0.${BUILD_NUMBER}"
