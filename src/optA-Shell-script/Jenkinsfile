@@ -23,9 +23,9 @@ node {
                     export EDGE_SKIP_TLS=1
 
                     echo "----- Prepare workspace ------"
-                    rm -rf workspace
-                    mkdir workspace
-                    #cp -RT $PROJECT_PATH_PREFIX/app ./workspace #FIX change back later to src/app
+                    rm -rf "$PROJECT_PATH_PREFIX/workspace"
+                    mkdir "$PROJECT_PATH_PREFIXworkspace"
+                    #cp -RT "$PROJECT_PATH_PREFIX/app" "$PROJECT_PATH_PREFIX/workspace" #FIX change back later to src/app
 
                     echo "----- Set publisher configuration ------"
                     iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "PROJECT_PATH_PREFIX/workspace"
