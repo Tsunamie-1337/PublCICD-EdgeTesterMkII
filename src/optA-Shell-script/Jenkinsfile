@@ -24,7 +24,7 @@ node {
 
                     echo "----- Prepare workspace ------"
                     rm -rf "$PROJECT_PATH_PREFIX/workspace"
-                    mkdir "$PROJECT_PATH_PREFIXworkspace"
+                    mkdir "$PROJECT_PATH_PREFIX/workspace"
                     #cp -RT "$PROJECT_PATH_PREFIX/app" "$PROJECT_PATH_PREFIX/workspace" #FIX change back later to src/app
 
                     echo "----- Set publisher configuration ------"
