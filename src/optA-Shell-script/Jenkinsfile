@@ -37,8 +37,7 @@ node {
                     #cp -RT $PROJECT_PATH_PREFIX/app ./workspace
                     #cd workspace
 
-                    echo "----- IEM Login ------"
-                    iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
+
 
 
 
@@ -62,11 +61,23 @@ node {
                         -u 'JenkinsCICD-Demo' \
                         -r '/'
 
-
+                    echo "----- IEM Login ------"
+                    iectl config add iem \
+                        --name 'iemdev' \
+                        --url "$IEM_URL" \
+                        --user "$USER_NAME" \
+                        --password "$PSWD"
 
                     iectl publisher app-project upload catalog \
                       --appname $APP_NAME \
                       -v "0.0.${BUILD_NUMBER}"
+
+
+
+
+
+
+
 
                     #iectl publisher standalone-app version export \
                     #    --appname "myapp" \
