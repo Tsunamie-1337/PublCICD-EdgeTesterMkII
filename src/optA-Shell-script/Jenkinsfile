@@ -23,30 +23,26 @@ node {
                     export EDGE_SKIP_TLS=1
 
                     echo "----- Set publisher configuration ------"
-                    iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "$PROJECT_PATH_PREFIX/workspace"
+                    iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "./workspace"
 
                     echo "----- Prepare workspace ------"
-                    rm -rf "$PROJECT_PATH_PREFIX/workspace"
-                    mkdir "$PROJECT_PATH_PREFIX/workspace"
-                
+                    rm -rf workspace
+                    mkdir workspace
+                    cd workspace
+
                     echo "----- init workspace and copy app files -----"
                     iectl publisher workspace init
-                    #cp -RT "$PROJECT_PATH_PREFIX/app" "$PROJECT_PATH_PREFIX/workspace"
+                    cd ..
+                    cp -RT app ./workspace
+                    cd workspace
 
                     echo "----- IEM Login ------"
                     iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
 
-                    iectl publisher standalone-app create \
-                        --appname "$APP_NAME" \
-                        --appId "$APP_ID" \
-                        --reponame "$APP_ID" \
-                        --appdescription "My Jenkins CI/CD Demo Application" || true
-
                     echo "----- Create new app version ------"
                     # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details" \
-                    iectl publisher standalone-app version create \
+                    iectl publisher app-project version create \
                         -a "$APP_ID" \
-                        --changelogs "Jenkins CI/CD Build ${BUILD_NUMBER}" \
                         -v "0.0.${BUILD_NUMBER}" \
                         -y "$PROJECT_PATH_PREFIX/app/docker-compose.prod.yml" \
                         -n '{"JenkinsCICD-Demo":[{"name":"JenkinsCICD-Demo","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
@@ -55,15 +51,10 @@ node {
                         -u 'JenkinsCICD-Demo' \
                         -r '/'
                     
-                    echo "----- Upload app version to IEM ------"
-                    iectl publisher app-project upload catalog  \
-                        --appname "$APP_NAME" \
-                        --versionnumber "0.0.${BUILD_NUMBER}" \
-
                     echo "----- Deploy on edge device ------"
                     iectl iem app-project install \
                         -a "$APP_NAME" \
-                        --version "0.0.${BUILD_NUMBER}" \
+                       --version "0.0.${BUILD_NUMBER}" \
                         -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'                    
                     """
                 }
