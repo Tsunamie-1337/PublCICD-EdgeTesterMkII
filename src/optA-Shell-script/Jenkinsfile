@@ -17,6 +17,7 @@ node {
                     sh """
                     # A flag for bash scripts to exit on error
                     set -e
+                    set -x
 
                     # Set environment variables
                     export IE_SKIP_CERTIFICATE=true
@@ -28,7 +29,6 @@ node {
                     echo "----- Prepare workspace ------"
                     rm -rf workspace
                     iectl publisher workspace init
-                    #cd workspace
 
                     #echo "----- Copy app files -----"
                     #cd ..
