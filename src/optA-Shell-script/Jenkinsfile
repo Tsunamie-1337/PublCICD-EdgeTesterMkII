@@ -31,7 +31,7 @@ node {
                     cd workspace
 
                     echo "----- init workspace and copy app files -----"
-                    iectl publisher workspace init
+                    #iectl publisher workspace init
                     cd ..
                     cp -RT app ./workspace
                     cd workspace
