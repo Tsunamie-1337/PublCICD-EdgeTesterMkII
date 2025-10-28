@@ -30,10 +30,8 @@ node {
                     rm -rf workspace
                     iectl publisher workspace init
 
-                    echo "----- Copy app files -----"
-                    
-                    cp -RT $PROJECT_PATH_PREFIX/app ./workspace
-                    
+                    #echo "----- Copy app files -----"
+                    #cp -RT $PROJECT_PATH_PREFIX/app ./workspace
 
                     echo "----- Create new app version ------"
                     # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details" \
@@ -47,6 +45,25 @@ node {
                         -t 'FromBoxReverseProxy' \
                         -u 'JenkinsCICD-Demo' \
                         -r '/'
+
+
+
+                    echo "----- Create new app version ------"
+                     I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details" \
+                    iectl publisher app-project version create \
+                        -a "$APP_ID" \
+                        -v "0.0.${BUILD_NUMBER}" \
+                        -y "$PROJECT_PATH_PREFIX/app/docker-compose.prod.yml" \
+                        -n '{"JenkinsCICD-Demo":[{"name":"JenkinsCICD-Demo","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
+                        -s 'JenkinsCICD-Demo' \
+                        -t 'FromBoxReverseProxy' \
+                        -u 'JenkinsCICD-Demo' \
+                       -r '/'    
+
+
+
+
+
 
                     echo "----- IEM Login ------"
                     iectl config add iem \
