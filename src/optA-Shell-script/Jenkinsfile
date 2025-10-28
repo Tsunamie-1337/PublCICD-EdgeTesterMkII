@@ -35,17 +35,6 @@ node {
                     #cp -RT $PROJECT_PATH_PREFIX/app ./workspace
                     #cd workspace
 
-
-
-
-
-
-
-
-
-
-
-
                     echo "----- Create new app version ------"
                     # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details" \
                     iectl publisher standalone-app create \
@@ -66,20 +55,16 @@ node {
                         --user "$USER_NAME" \
                         --password "$PSWD"
 
-                    #iectl publisher app-project upload catalog \
-                    #  --appname $APP_NAME \
-                    # -v "0.0.${BUILD_NUMBER}"
+                    echo "----- Upload to the catalog ------"
+                    iectl publisher app-project upload catalog \
+                        --appname $APP_NAME \
+                        -v "0.0.${BUILD_NUMBER}"
 
-                    iectl publisher standalone-app version export \
-                        --appname "myapp" \
-                        --versionnumber "0.0.${BUILD_NUMBER}" \
-                        --exportpath "workspace"
-                    
-                    iectl iem catalog import-application \
-                        --app-file-path "workspace/myapp.app"
-
-
-
+                    echo "----- Deploy on edge device ------"
+                    iectl iem app-project install \
+                        -a "$APP_NAME" \
+                       --version "0.0.${BUILD_NUMBER}" \
+                        -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'    
 
 
 
@@ -95,13 +80,7 @@ node {
                     #    -s 'JenkinsCICD-Demo' \
                     #    -t 'FromBoxReverseProxy' \
                     #    -u 'JenkinsCICD-Demo' \
-                    #   -r '/'
-                    
-                    echo "----- Deploy on edge device ------"
-                    iectl iem app-project install \
-                        -a "$APP_NAME" \
-                       --version "0.0.${BUILD_NUMBER}" \
-                        -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'                    
+                    #   -r '/'                
                     """
                 }
 
@@ -114,4 +93,3 @@ node {
                 }
     }        
  }
-
