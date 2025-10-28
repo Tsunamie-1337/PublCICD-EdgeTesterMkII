@@ -48,10 +48,12 @@ node {
                         -u 'JenkinsCICD-Demo' \
                         -r '/'
 
+
+                    cd "${env.PROJECT_PATH_PREFIX}/app"
                     echo "----- Upload app version to IEM ------"
                     iectl publisher standalone-app version export \
                         --appname "$APP_NAME" \
-                        --versionnumber "0.0.${BUILD_NUMBER}" \
+                       --versionnumber "0.0.${BUILD_NUMBER}" \
                         --exportpath "app_export"
 
                     echo "----- Deploy on edge device ------"
