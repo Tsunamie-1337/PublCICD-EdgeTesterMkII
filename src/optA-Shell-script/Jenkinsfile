@@ -38,7 +38,7 @@ node {
 
 
 
-                  echo "----- Checking and creating App Project "$APP_NAME" "$$APP_ID" ------"
+                  echo "----- Checking and creating App Project "$APP_NAME" "$APP_ID" ------"
                     try {
                         sh """
                             iectl publisher app-project create \\
