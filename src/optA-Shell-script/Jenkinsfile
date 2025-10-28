@@ -33,7 +33,7 @@ node {
                     echo "----- init workspace and copy app files -----"
                     #iectl publisher workspace init
                     cd ..
-                    cp -RT app ./workspace
+                    cp -RT $PROJECT_PATH_PREFIX/app ./workspace
                     cd workspace
 
                     echo "----- IEM Login ------"
