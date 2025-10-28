@@ -48,6 +48,18 @@ node {
 
 
 
+
+
+                    echo "----- IEM Login ------"
+                    iectl config add iem \
+                        --name 'iemdev' \
+                        --url "$IEM_URL" \
+                        --user "$USER_NAME" \
+                        --password "$PSWD"
+
+
+
+
                     echo "----- Create new app version ------"
                      I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details" \
                     iectl publisher app-project version create \
@@ -65,12 +77,7 @@ node {
 
 
 
-                    echo "----- IEM Login ------"
-                    iectl config add iem \
-                        --name 'iemdev' \
-                        --url "$IEM_URL" \
-                        --user "$USER_NAME" \
-                        --password "$PSWD"
+
 
                     echo "----- Upload to the catalog ------"
                     iectl publisher app-project upload catalog \
