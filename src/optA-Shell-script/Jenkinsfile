@@ -14,7 +14,7 @@ node {
                 }
                 
                 stage('Upload to IEM and deploy on Device') {
-                    sh '''
+                    sh """
                     # A flag for bash scripts to exit on error
                     set -e
 
@@ -47,10 +47,9 @@ node {
                         -t 'FromBoxReverseProxy' \
                         -u 'JenkinsCICD-Demo' \
                         -r '/'
-
-
-                    cd "${env.PROJECT_PATH_PREFIX}/app"
+                    
                     echo "----- Upload app version to IEM ------"
+                    cd "${env.PROJECT_PATH_PREFIX}/app"
                     iectl publisher standalone-app version export \
                         --appname "$APP_NAME" \
                        --versionnumber "0.0.${BUILD_NUMBER}" \
@@ -61,7 +60,7 @@ node {
                         -a "$APP_NAME" \
                        --version "0.0.${BUILD_NUMBER}" \
                         -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'                    
-                    '''
+                    """
                 }
 
                 stage('Cleanup Docker') {
