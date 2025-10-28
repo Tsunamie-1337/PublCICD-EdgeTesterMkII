@@ -39,18 +39,11 @@ node {
 
 
                   echo "----- Checking and creating App Project "$APP_NAME" "$APP_ID" ------"
-                    try {
-                        sh """
                             iectl publisher app-project create \
                                 --name "$APP_NAME" \
                                 --id "$APP_ID" \
                                 --type "Standalone" \
                                 --description "My Jenkins CI/CD Demo Application"
-                        """
-                        echo "App Project "$APP_NAME" created successfully."
-                    } catch (err) {
-                        echo "App Project "$APP_NAME}" probably already exists, skipping creation. Error: ${err}"
-                    }
 
 
 
