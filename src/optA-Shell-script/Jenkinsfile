@@ -72,11 +72,11 @@ node {
 
                     iectl publisher standalone-app version export \
                         --appname "myapp" \
-                        --versionnumber "0.0.1" \
-                        --exportpath "sample_export_path"
+                        --versionnumber "0.0.${BUILD_NUMBER}" \
+                        --exportpath "workspace"
                     
                     iectl iem catalog import-application \
-                        --app-file-path "sample_export_path/myapp.app"
+                        --app-file-path "workspace/myapp.app"
 
 
 
