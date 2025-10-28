@@ -28,7 +28,7 @@ node {
                     echo "----- Prepare workspace ------"
                     rm -rf workspace
                     iectl publisher workspace init
-                    cd workspace
+                    #cd workspace
 
                     #echo "----- Copy app files -----"
                     #cd ..
