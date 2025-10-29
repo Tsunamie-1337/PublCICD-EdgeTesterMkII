@@ -21,11 +21,9 @@ checkout scm
                     rm -rf workspace
                     mkdir workspace
                     tree
-                    cd workspace
-                    ls -la
 
                     echo "----- Set publisher configuration ------"
-                    iectl config add publisher --name "publisherdev" --dockerurl "http://docker:2375" --workspace "."
+                    iectl config add publisher --name "publisherdev" --dockerurl "http://docker:2375" --workspace "./workspace"
 
                     iectl publisher workspace init
                     cd ..
