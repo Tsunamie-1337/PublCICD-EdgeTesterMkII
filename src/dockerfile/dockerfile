@@ -1,0 +1,25 @@
+FROM ubuntu:22.04
+	
+RUN apt-get update
+
+# Copy the ie-app-publisher and iectl binaries into the binary folders and make them executable
+# These binaries can be downloaded from the IE-Hub
+# I installed the binaries in my local /bin folder and copied them from there into the saame folder as this dockerfile
+# The binaries aren't visible in the git repo as they are in the .gitignore file doe to their size
+COPY ie-app-publisher-linux /usr/bin
+RUN chmod +x /usr/bin/ie-app-publisher-linux
+COPY iectl /usr/bin
+RUN chmod +x /usr/bin/iectl
+
+# Install docker and docker-compose
+RUN apt-get install -y curl gnupg2 pass
+RUN curl -sSL https://get.docker.com/ | sh
+RUN apt-get install -y docker-compose
+
+# Install jq for json parsing which is needed in the Deploy to edge device stage in the jenkinsfile
+RUN apt-get update && apt-get install -y jq && rm -rf /var/lib/apt/lists/*
+
+# Create a workspace folder and initialize it with the ie-app-publisher
+RUN mkdir -p /app/src/workspace
+WORKDIR /app/src/workspace
+RUN ie-app-publisher-linux ws init
