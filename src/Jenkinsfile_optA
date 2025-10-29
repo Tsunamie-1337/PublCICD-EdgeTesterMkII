@@ -8,78 +8,51 @@ checkout scm
                     """
                 }
                 
-                stage('Upload to IEM and deploy on Device') {
-                    sh """
-                    # A flag for bash scripts to exit on error
-                    set -e
+        stage('Upload and Deploy') { // Stage umbenannt, da sie jetzt auch die Bereitstellung umfasst
+            steps {
+                echo 'Uploading application to IEM and deploying on device...'
+                sh """
+                    set -e # Beende das Skript sofort, wenn ein Befehl fehlschlägt
 
-                    # Set environment variables
-                    export IE_SKIP_CERTIFICATE=true
-                    export EDGE_SKIP_TLS=1
+                    # 1. Temporären Arbeitsbereich für iectl vorbereiten
+                    # Das 'app'-Verzeichnis enthält die docker-compose.prod.yml und die Anwendungsdateien.
+                    # Wir erstellen einen temporären Ordner und kopieren den Inhalt von 'app' dorthin.
+                    rm -rf iectl_workspace // Alten temporären Ordner löschen (falls vorhanden)
+                    mkdir iectl_workspace // Neuen temporären Ordner erstellen
+                    cp -RT app ./iectl_workspace // Inhalt von 'app' in den temporären Ordner kopieren
+                    cd iectl_workspace // In den temporären Ordner wechseln
 
-                    echo "----- Set publisher configuration ------"
-                    iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "."
+                    # 2. iectl Publisher konfigurieren
+                    # Wir verwenden 'localhost:2375' für den Docker-Daemon, da die Images lokal auf dem Agenten gebaut wurden.
+                    # '--workspace "."': iectl soll im aktuellen Verzeichnis nach den Projektdateien suchen.
+                    iectl config add publisher --name "publisher-local" --dockerurl "http://localhost:2375" --workspace "."
 
-                    echo "----- Prepare workspace ------"
-                    rm -rf workspace
-                    iectl publisher workspace init
-                    
-                    echo "----- Prepare workspace ------"
-                    cp -RT src/app /app/src/workspace
-                    cd /app/src/workspace
+                    # 3. IEM-Login konfigurieren
+                    export IE_SKIP_CERTIFICATE=true // Zertifikatsprüfung überspringen (falls nötig)
+                    export EDGE_SKIP_TLS=1 // TLS-Prüfung für Edge-Verbindungen überspringen (falls nötig und in Methode B verwendet)
+                    iectl config add iem --name 'iemdev' --url "$IEM_URL" --user "$USER_NAME" --password "$PSWD"
 
-                    #echo "----- Copy app files -----"
-                    cp -RT $PROJECT_PATH_PREFIX/app ./workspace
-
-                    echo "----- Create new app version ------"
-                    # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details" \
-                    iectl publisher standalone-app create \
-                        --appname "$APP_NAME" \
-                        --changelogs "REEEEEEEEEEEEEE" \
-                        --yamlpath "$PROJECT_PATH_PREFIX/app/docker-compose.prod.yml" \
-                        --versionnumber "0.0.${BUILD_NUMBER}" \
-                        -n '{"JenkinsCICD-Demo":[{"name":"JenkinsCICD-Demo","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
-                        -s 'JenkinsCICD-Demo' \
-                        -t 'FromBoxReverseProxy' \
-                        -u 'JenkinsCICD-Demo' \
+                    # 4. Neue Anwendungsversion im IEM erstellen
+                    # Dieser Befehl lädt die Anwendung (inkl. der referenzierten Docker-Images vom lokalen Daemon) ins IEM hoch.
+                    iectl publisher app-project version create \\
+                        -a "$APP_ID" \\
+                        -v "0.0.${BUILD_NUMBER}" \\
+                        -y ./docker-compose.prod.yml \\
+                        -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \\
+                        -s 'hello-edge' \\
+                        -t 'FromBoxReverseProxy' \\
+                        -u 'hello-edge' \\
                         -r '/'
 
-                    echo "----- IEM Login ------"
-                    iectl config add iem \
-                        --name 'iemdev' \
-                        --url "$IEM_URL" \
-                        --user "$USER_NAME" \
-                        --password "$PSWD"
-
-                    echo "----- Upload to the catalog ------"
-                    iectl publisher app-project upload catalog \
-                        --appname $APP_NAME \
-                        -v "0.0.${BUILD_NUMBER}"
-
-                    echo "----- Deploy on edge device ------"
-                    iectl iem app-project install \
-                        -a "$APP_NAME" \
-                       --version "0.0.${BUILD_NUMBER}" \
-                        -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'    
-
-
-
-
-
-                    #echo "----- Create new app version ------"
-                    # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details" \
-                    #iectl publisher app-project version create \
-                    #    -a "$APP_ID" \
-                    #    -v "0.0.${BUILD_NUMBER}" \
-                    #    -y "$PROJECT_PATH_PREFIX/app/docker-compose.prod.yml" \
-                    #    -n '{"JenkinsCICD-Demo":[{"name":"JenkinsCICD-Demo","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
-                    #    -s 'JenkinsCICD-Demo' \
-                    #    -t 'FromBoxReverseProxy' \
-                    #    -u 'JenkinsCICD-Demo' \
-                    #   -r '/'                
-                    """
-                }
-
+                    # 5. Anwendungsversion auf dem Edge-Gerät bereitstellen
+                    # Dieser Schritt ersetzt den 'uuv'-Befehl aus der ursprünglichen Methode A und entspricht der Bereitstellungslogik von Methode B.
+                    iectl iem app-project install \\
+                        -a "$APP_NAME" \\
+                        --version "0.0.${BUILD_NUMBER}" \\
+                        -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'
+                """
+            }
+        }
                 stage('Cleanup Docker') {
                     sh '''
                     docker ps -a | grep docker:24-dind | awk \'{print $1}\' | xargs -r docker rm -f
