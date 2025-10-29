@@ -41,7 +41,7 @@ node {
                 }
                 
                 stage('Upload to IEM and deploy on Device') {
-                    sh """
+                    sh '''
                     # A flag for bash scripts to exit on error
                     set -e
 
@@ -75,7 +75,7 @@ node {
                         -a "${APP_NAME}" \
                         --version "0.0.${BUILD_NUMBER}" \
                         -i '{"devices":["'"${EDGE_DEVICE_ID}"'"]}'
-                    """
+                    '''
                 }
 
                 stage('Cleanup Docker') {
