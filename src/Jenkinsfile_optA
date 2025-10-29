@@ -9,7 +9,6 @@ checkout scm
                 }
                 
         stage('Upload and Deploy') { // Stage umbenannt, da sie jetzt auch die Bereitstellung umfasst
-            steps {
                 echo 'Uploading application to IEM and deploying on device...'
                 sh """
                     set -e # Beende das Skript sofort, wenn ein Befehl fehlschlägt
@@ -51,7 +50,7 @@ checkout scm
                         --version "0.0.${BUILD_NUMBER}" \\
                         -i '{"devices":["'"$EDGE_DEVICE_ID"'"]}'
                 """
-            }
+            
         }
                 stage('Cleanup Docker') {
                     sh '''
