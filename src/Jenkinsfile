@@ -53,7 +53,10 @@ node {
                     echo "----- Prepare workspace ------"
                     cp -RT src/app /app/src/workspace
                     cd /app/src/workspace
-                    tree
+                        tree
+                        cd..
+                        ls
+                        tree
 
                     echo "----- Set publisher configuration ------"
                     iectl config add publisher --name "publisher-dind" --dockerurl "http://docker:2375" --workspace "./workspace"
