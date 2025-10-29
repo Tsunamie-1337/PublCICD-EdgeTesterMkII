@@ -31,7 +31,7 @@ node {
                     iectl publisher workspace init
 
                     #echo "----- Copy app files -----"
-                    #cp -RT $PROJECT_PATH_PREFIX/app ./workspace
+                    cp -RT $PROJECT_PATH_PREFIX/app ./workspace
 
                     echo "----- Create new app version ------"
                     # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details" \
