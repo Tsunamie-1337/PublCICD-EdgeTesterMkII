@@ -24,7 +24,7 @@ node {
                     export EDGE_SKIP_TLS=1
 
                     echo "----- Set publisher configuration ------"
-                    iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "./workspace"
+                    iectl config add publisher --name "iemdev" --dockerurl "http://docker:2375" --workspace "."
 
                     echo "----- Prepare workspace ------"
                     rm -rf workspace
