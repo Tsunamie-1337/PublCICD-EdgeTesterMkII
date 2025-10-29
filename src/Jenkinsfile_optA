@@ -26,7 +26,7 @@ checkout scm
                     iectl config add publisher --name "publisherdev" --dockerurl "http://docker:2375" --workspace "./workspace"
 
                     iectl publisher workspace init
-                    cp -RT app ./workspace
+                    cp -RT src/app ./workspace
                     cd workspace
                     tree
                     ls -la
