@@ -51,7 +51,7 @@ node {
 
                     echo "----- Prepare workspace ------"
                     #cp -RT src/app /app/src/workspace
-                    #cd /app/src/workspace
+                    cd /app/src/workspace
 
                     echo "----- Set publisher configuration ------"
                     iectl config add publisher --name "publisherdev" --dockerurl "http://docker:2375" --workspace "/app/src/workspace"
