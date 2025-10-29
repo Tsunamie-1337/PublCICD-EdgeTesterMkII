@@ -55,13 +55,13 @@ node {
                     echo "----- IEM Login ------"
                     export IE_SKIP_CERTIFICATE=true
                     export EDGE_SKIP_TLS=1
-                    iectl config add iem --name 'iemdev' --url "\${IEM_URL}" --user "\${USER_NAME}" --password "\${PSWD}"
+                    iectl config add iem --name 'iemdev' --url "${IEM_URL}" --user "${USER_NAME}" --password "${PSWD}"
 
                     echo "----- Create new app version ------"
                     # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details"
                     iectl publisher app-project version create \
-                        -a "\${APP_ID}" \
-                        -v "0.0.\${BUILD_NUMBER}" \
+                        -a "${APP_ID}" \
+                        -v "0.0.${BUILD_NUMBER}" \
                         -y ./docker-compose.prod.yml \
                         -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
                         -s 'hello-edge' \
@@ -71,15 +71,15 @@ node {
 
                     echo "----- Deploy on edge device ------"
                     iectl iem app-project install \
-                        -a "\${APP_NAME}" \
-                        --version "0.0.\${BUILD_NUMBER}" \
-                        -i '{"devices":["'"\${EDGE_DEVICE_ID}"'"]}'
+                        -a "${APP_NAME}" \
+                        --version "0.0.${BUILD_NUMBER}" \
+                        -i '{"devices":["'"${EDGE_DEVICE_ID}"'"]}'
                     """
                 }
 
                 stage('Cleanup Docker') {
                     sh """
-                    docker ps -a | grep docker:24-dind | awk \'{print \${1}}\' | xargs -r docker rm -f
+                    docker ps -a | grep docker:24-dind | awk \'{print \$1}\' | xargs -r docker rm -f
                     docker system prune -af || true
                     docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi || true
                     """
