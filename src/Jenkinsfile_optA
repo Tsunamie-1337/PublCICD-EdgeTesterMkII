@@ -3,7 +3,7 @@ checkout scm
     withEnv(['HOME=.']) {          
                 stage ('Build') {
                     sh """
-                        cd "$PROJECT_PATH_PREFIX/app"
+                        cd app
                         docker-compose build
                     """
                 }
