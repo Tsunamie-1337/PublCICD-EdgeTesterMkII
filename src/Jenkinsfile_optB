@@ -57,22 +57,6 @@ node {
                     export EDGE_SKIP_TLS=1
                     iectl config add iem --name 'iemdev' --url "${IEM_URL}" --user "${USER_NAME}" --password "${PSWD}"
 
-                    echo "----- Determine New Version ------"
-                    # Get previous version number
-                    OLD_VERSION=\$(iectl iem app-project app-details --project-name "${APP_NAME}" --app-name "${APP_NAME}" | jq -r '.versions[0].versionNumber // "0.0.0"')
-                    echo "Previous version: \${OLD_VERSION}"
-                    
-                    # Split the version into array using '.' as the delimiter
-                    IFS='.' read -r -a version_parts <<< "\${OLD_VERSION}"
-                    
-                    # Increment the last part of the version number
-                    version_parts[2]=\$((version_parts[2] + 1))
-                    
-                    # Reassemble the new version
-                    NEW_VERSION="\${version_parts[0]}.\${version_parts[1]}.\${version_parts[2]}"
-                    export NEW_VERSION
-                    echo "Determined new version: \${NEW_VERSION}"
-
                     echo "----- Create new app version ------"
                     # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details"
                     iectl publisher app-project version create \
