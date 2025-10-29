@@ -21,17 +21,16 @@ checkout scm
                     rm -rf workspace
                     mkdir workspace
                     tree
-                    cd workspace
-                    tree
+                    #cd workspace
+
+                    iectl publisher workspace init
+                    #cd ..
+                    #cp -RT app ./workspace
+                    #cd workspace
+                    #tree
 
                     echo "----- Set publisher configuration ------"
                     iectl config add publisher --name "publisherdev" --dockerurl "http://docker:2375" --workspace "."
-                    tree
-
-                    iectl publisher workspace init
-                    cd ..
-                    cp -RT app ./workspace
-                    cd workspace
                     tree
 
                     echo "----- IEM Login ------"
