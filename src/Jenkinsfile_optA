@@ -26,7 +26,7 @@ checkout scm
 
                     iectl publisher workspace init
                     #cp -RT src/app ./workspace
-                    #cd workspace
+                    cd workspace
 
                     echo "----- IEM Login ------"
                     iectl config add iem --name 'iemdev' --url "${IEM_URL}" --user "${USER_NAME}" --password "${PSWD}"
