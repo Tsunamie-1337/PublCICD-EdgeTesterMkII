@@ -59,7 +59,7 @@ node {
 
                     echo "----- Determine New Version ------"
                     # Get previous version number
-                    OLD_VERSION=\$(iectl iem app-project app-details --project-name "${PROJECT_NAME}" --app-name "${APP_NAME}" | jq -r '.versions[0].versionNumber // "0.0.0"')
+                    OLD_VERSION=\$(iectl iem app-project app-details --project-name "${APP_NAME}" --app-name "${APP_NAME}" | jq -r '.versions[0].versionNumber // "0.0.0"')
                     echo "Previous version: \${OLD_VERSION}"
                     
                     # Split the version into array using '.' as the delimiter
