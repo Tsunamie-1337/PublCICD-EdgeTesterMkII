@@ -46,6 +46,7 @@ node {
                     set -e
 
                     echo "----- Prepare workspace ------"
+                    mkdir -p /app/src/workspace
                     cp -RT src/app /app/src/workspace
                     cd /app/src/workspace
 
