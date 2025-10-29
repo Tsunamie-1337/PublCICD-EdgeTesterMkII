@@ -50,7 +50,6 @@ node {
                     export EDGE_SKIP_TLS=1
 
                     echo "----- Prepare workspace ------"
-                    mkdir -p /app/src/workspace # TODO moved to dockerfile for the docker registry remove later TODO needs to be recompiled and uploaded for that
                     #cp -RT src/app /app/src/workspace
                     #cd /app/src/workspace
 
