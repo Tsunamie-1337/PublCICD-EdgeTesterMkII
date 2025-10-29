@@ -45,17 +45,20 @@ node {
                     # A flag for bash scripts to exit on error
                     set -e
 
-                    echo "----- Prepare workspace ------"
-                    mkdir -p /app/src/workspace
-                    cp -RT src/app /app/src/workspace
-                    cd /app/src/workspace
-
-                    echo "----- Set publisher configuration ------"
-                    iectl config add publisher --name "publisher-dind" --dockerurl "http://docker:2375" --workspace "."
-
-                    echo "----- IEM Login ------"
+                    #set envireonment variables for iectl
                     export IE_SKIP_CERTIFICATE=true
                     export EDGE_SKIP_TLS=1
+
+                    echo "----- Prepare workspace ------"
+                    mkdir -p /app/src/workspace # TODO moved to dockerfile for the docker registry remove later TODO needs to be recompiled and uploaded for that
+                    #cp -RT src/app /app/src/workspace
+                    #cd /app/src/workspace
+
+                    echo "----- Set publisher configuration ------"
+                    iectl config add publisher --name "publisherdev" --dockerurl "http://docker:2375" --workspace "/app/src/workspace"
+                    iectl publisher workspace init
+
+                    echo "----- IEM Login ------"
                     iectl config add iem --name 'iemdev' --url "${IEM_URL}" --user "${USER_NAME}" --password "${PSWD}"
 
                     echo "----- Create new app version ------"
@@ -90,3 +93,44 @@ node {
         }
     }
 }
+
+/*
+                stage('Upload to IEM and deploy on Device') {
+                    sh '''
+                    # A flag for bash scripts to exit on error
+                    set -e
+
+                    echo "----- Prepare workspace ------"
+                    mkdir -p /app/src/workspace # TODO moved to dockerfile for the docker registry remove later TODO needs to be recompiled and uploaded for that
+                    cp -RT src/app /app/src/workspace
+                    cd /app/src/workspace
+
+                    echo "----- Set publisher configuration ------"
+                    iectl config add publisher --name "publisher-dind" --dockerurl "http://docker:2375" --workspace "."
+
+                    echo "----- IEM Login ------"
+                    export IE_SKIP_CERTIFICATE=true
+                    export EDGE_SKIP_TLS=1
+                    iectl config add iem --name 'iemdev' --url "${IEM_URL}" --user "${USER_NAME}" --password "${PSWD}"
+
+                    echo "----- Create new app version ------"
+                    # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details"
+                    # This line can be used as an example to get last app version: OLD_VERSION=$(iectl iem app-project app-details --project-name "XXX" --app-name "XXX" | jq -r '.versions[0].versionNumber // "0.0.0"') 
+                    iectl publisher app-project version create \
+                        -a "${APP_ID}" \
+                        -v "0.0.${BUILD_NUMBER}" \
+                        -y ./docker-compose.prod.yml \
+                        -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
+                        -s 'hello-edge' \
+                        -t 'FromBoxReverseProxy' \
+                        -u 'hello-edge' \
+                        -r '/'
+
+                    echo "----- Deploy on edge device ------"
+                    iectl iem app-project install \
+                        -a "${APP_NAME}" \
+                        --version "0.0.${BUILD_NUMBER}" \
+                        -i '{"devices":["'"${EDGE_DEVICE_ID}"'"]}'
+                    '''
+                }
+*/
