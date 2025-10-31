@@ -7,7 +7,7 @@ version: '2.4'
 services:
   conntest_backend:
     build:
-      context: ./src/backend_flask
+      context: ./src/app/backend_flask
     image: conntest_backend:0.1
     restart: unless-stopped
     mem_limit: 300mb
@@ -20,7 +20,7 @@ services:
       - conntest-net
   conntest_frontend:
     build:
-      context: ./src/frontend_react
+      context: ./src/app/frontend_react
     image: conntest_frontend:0.1
     restart: unless-stopped
     mem_limit: 100mb
