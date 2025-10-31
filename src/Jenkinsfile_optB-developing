@@ -42,7 +42,7 @@ node {
                 
                 stage('Upload to IEM and deploy on Device') {
                     sh '''
-                    cp -RT app /app/src/workspace
+                    cp -RT src/app /app/src/workspace
                     cd /app/src/workspace
                     ie-app-publisher-linux de c -u http://docker:2375
                     export IE_SKIP_CERTIFICATE=true
