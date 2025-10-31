@@ -15,7 +15,9 @@ checkout scm
 
                     rm -rf workspace
                     mkdir workspace
+                    tree
                     cd workspace
+                    ls -la
                     ie-app-publisher-linux ws init
                     cd ..
                     cp -RT src/app ./workspace
