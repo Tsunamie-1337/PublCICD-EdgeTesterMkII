@@ -135,10 +135,10 @@ node {
 
 Current Situation: The Docker registry still had code with ie-publisher elements. I commented the lines out in the dockerfile from the dockerfile folder. I published it on tsunamie1337/cicd-pipeline-mk2:tester and set the variable in jenkins
 
-If i cd before the publisher ws init i get the erro that the folder would be apparently not empty Workspace /app/src/workspace is not valid. Please provide path of an empty folder.
-
+If i cd before the publisher ws init i get the error that the folder would be apparently not empty Workspace /app/src/workspace is not valid. Please provide path of an empty folder.
+    My belief is currently without cd
 I need to figure out where te error invalid docker compose file comes from or try again to upload with ehe example below
-
+    Plead do not tell me it was just because the compose prod is referenced in the upload stage not the compose
 cd /var/lib/jenkins/workspace/Jankis
 sudo rm -rf * .[!.]* ..?*
 
