@@ -42,36 +42,13 @@ node {
                 
                 stage('Upload to IEM and deploy on Device') {
                     sh '''
-                    # A flag for bash scripts to exit on error
-                    set -e
-
-                    #set envireonment variables for iectl
-                    export IE_SKIP_CERTIFICATE=true
-                    export EDGE_SKIP_TLS=1
-
-                    echo "----- Prepare workspace ------"
-                    #cp -RT src/app /app/src/workspace
+                    cp -RT app /app/src/workspace
                     cd /app/src/workspace
-
-                    echo "----- Set publisher configuration ------"
-                    iectl config add publisher --name "publisherdev" --dockerurl "http://docker:2375" --workspace "/app/src/workspace"
-                    iectl publisher workspace init
-
-                    echo "----- IEM Login ------"
-                    iectl config add iem --name 'iemdev' --url "${IEM_URL}" --user "${USER_NAME}" --password "${PSWD}"
-
-                    echo "----- Create new app version ------"
-                    # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details"
-                    # This line can be used as an example to get last app version: OLD_VERSION=$(iectl iem app-project app-details --project-name "XXX" --app-name "XXX" | jq -r '.versions[0].versionNumber // "0.0.0"') 
-                    iectl publisher app-project version create \
-                        -a "${APP_ID}" \
-                        -v "0.0.${BUILD_NUMBER}" \
-                        -y ./docker-compose.prod.yml \
-                        -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
-                        -s 'hello-edge' \
-                        -t 'FromBoxReverseProxy' \
-                        -u 'hello-edge' \
-                        -r '/'
+                    ie-app-publisher-linux de c -u http://docker:2375
+                    export IE_SKIP_CERTIFICATE=true
+                    ie-app-publisher-linux em li -u "$IEM_URL" -e $USER_NAME -p $PSWD
+                    ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
+                    ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
 
                     echo "----- Deploy on edge device ------"
                     iectl iem app-project install \
