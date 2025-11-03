@@ -29,6 +29,11 @@ checkout scm
                     cd workspace
                     iectl publisher workspace init
                     
+pwd
+ls -l src/appicon/
+
+ls -ld src/appicon/icon.png
+
                     iectl publisher standalone-app create \
                                 --reponame "cicd-test" \
                                 --appdescription "EEEE"  \
