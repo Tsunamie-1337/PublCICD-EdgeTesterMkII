@@ -37,7 +37,6 @@ checkout scm
 
                     iectl publisher standalone-app version create \
                         --appname "${APP_NAME}" \
-                        --changelogs "initial release" \
                         --yamlpath "src/app/docker-compose.prod.yml" \
                         --versionnumber "0.0.${BUILD_NUMBER}" \
                         -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
