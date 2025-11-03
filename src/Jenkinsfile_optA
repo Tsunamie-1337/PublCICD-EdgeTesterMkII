@@ -35,10 +35,10 @@ checkout scm
                                 --reponame "cicd-test" \
                                 --appdescription "EEEE"  \
                                 --iconpath "src/appicon/icon.png" \
-                                --appname $APP_NAME
+                                --appname "${APP_NAME}V2"
 
                     iectl publisher standalone-app version create \
-                        --appname "${APP_NAME}" \
+                        --appname "${APP_NAME}V2" \
                         --changelogs "initial release" \
                         --yamlpath "src/app/docker-compose.prod.yml" \
                         --versionnumber "0.0.${BUILD_NUMBER}" \
