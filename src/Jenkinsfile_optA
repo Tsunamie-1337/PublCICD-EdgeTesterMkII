@@ -28,11 +28,11 @@ checkout scm
                     echo "---------------------------Initializing workspace---------------------------"
                     cd workspace
                     iectl publisher workspace init
-                    tree
+                    
                     iectl publisher standalone-app create \
                                 --reponame "cicd-test" \
                                 --appdescription "EEEE"  \
-                                --iconpath "$PROJECT_PATH_PREFIX/appicon/icon.png" \
+                                --iconpath "src/appicon/icon.png" \
                                 --appname $APP_NAME
 
                     iectl publisher standalone-app version create \
