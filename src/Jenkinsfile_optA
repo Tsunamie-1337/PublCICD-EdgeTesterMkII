@@ -32,7 +32,7 @@ checkout scm
                     iectl publisher standalone-app create \
                                 --reponame "cicd-test" \
                                 --appdescription "EEEE"  \
-                                --iconpath "/home/tsunamie/Projects/JenkinsCICD-Demo/PublCICD-EdgeTesterMkII/src/appicon/icon.png" \
+                                --iconpath "src/appicon/icon.png" \
                                 --appname $APP_NAME
 
                     iectl publisher standalone-app version create \
