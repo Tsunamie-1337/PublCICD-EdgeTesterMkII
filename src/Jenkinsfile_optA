@@ -24,7 +24,7 @@ checkout scm
                     export IE_SKIP_CERTIFICATE=true
                     export EDGE_SKIP_TLS=1
 
-                    iectl config add iem
+                    iectl config add iem \
                         --name 'iemdev' \
                         --url "${IEM_URL}" \
                         --user "${USER_NAME}" \
