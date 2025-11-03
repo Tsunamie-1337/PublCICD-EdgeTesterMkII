@@ -30,7 +30,6 @@ checkout scm
                     pwd
                     ls -l src/appicon/
                     ls -ld src/appicon/icon.png
-                    #cd workspace
 
                     iectl publisher standalone-app create \
                                 --reponame "cicd-test" \
@@ -50,7 +49,7 @@ checkout scm
                         -r "/"
 
                     echo "----- IEM Login ------"
-                    iectl config add iem
+                    iectl config add iem \
                         --name 'iemdev' \
                         --url "${IEM_URL}" \
                         --user "${USER_NAME}" \
