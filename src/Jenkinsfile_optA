@@ -30,7 +30,7 @@ checkout scm
                     iectl publisher workspace init
 
                     iectl publisher standalone-app create \
-                                --reponame "CICD-Test" \
+                                --reponame "cicd-test" \
                                 --appdescription "EEEE"  \
                                 --iconpath "$PROJECT_PATH_PREFIX/appicon/icon.png" \
                                 --appname $APP_NAME
