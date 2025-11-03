@@ -1,8 +1,13 @@
 node {
+
+//Set Absolute Path to src files here
+env.PROJECT_PATH_PREFIX="src"
+
 checkout scm
     withEnv(['HOME=.']) {          
                 stage ('Build') {
                     sh """
+                    tree
                         cd src/app
                         docker-compose build
                     """
@@ -10,6 +15,57 @@ checkout scm
                 
                 stage('Upload to IEM and deploy on Device') {
                     sh '''
+                    #set environment variables for iectl
+                    export IE_SKIP_CERTIFICATE=true
+                    export EDGE_SKIP_TLS=1
+
+                    echo "---------------------------Creating publisher configuration---------------------------"
+                    iectl config add publisher \
+                        --name "publisherdev" \
+                        --dockerurl "http://127.0.0.1:2375" \
+                        --workspace "$PROJECT_PATH_PREFIX/workspace"
+
+                    echo "---------------------------Initializing workspace---------------------------"
+                    cd workspace
+                    iectl publisher workspace init
+
+                    iectl publisher standalone-app version create \
+                        --appname "${APP_NAME}" \
+                        --changelogs "initial release" \
+                        --yamlpath "$PROJECT_PATH_PREFIX/app/docker-compose.prod.yml" \
+                        --versionnumber "0.0.${BUILD_NUMBER}" \
+                        -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
+                        -s "hello-edge" \
+                        -t "FromBoxReverseProxy" \
+                        -u "hello-edge" \
+                        -r "/"
+
+                    echo "----- IEM Login ------"
+                    iectl config add iem
+                        --name 'iemdev'
+                        --url "${IEM_URL}"
+                        --user "${USER_NAME}"
+                        --password "${PSWD}"
+
+                    #echo "----- Deploy on edge device ------"
+                    #iectl iem app-project install \
+                    #    -a "${APP_NAME}" \
+                    #   --version "0.0.${BUILD_NUMBER}" \
+                    #   -i '{"devices":["'"${EDGE_DEVICE_ID}"'"]}'
+                    '''
+                }
+
+                stage('Cleanup Docker') {
+                    sh """
+                    docker ps -a | grep docker:24-dind | awk \'{print \$1}\' | xargs -r docker rm -f
+                    docker system prune -af || true
+                    docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi || true
+                    """
+                }
+    }        
+ }
+
+ /*
                     # A flag for bash scripts to exit on error
                     set -e
 
@@ -27,27 +83,4 @@ checkout scm
                     ie-app-publisher-linux em li -u "$IEM_URL" -e $USER_NAME -p $PSWD
                     ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
                     ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
-
-                    echo "----- IEM Login ------"
-                    #set envireonment variables for iectl
-                    export IE_SKIP_CERTIFICATE=true
-                    export EDGE_SKIP_TLS=1
-                    iectl config add iem --name 'iemdev' --url "${IEM_URL}" --user "${USER_NAME}" --password "${PSWD}"
-
-                    echo "----- Deploy on edge device ------"
-                    iectl iem app-project install \
-                        -a "${APP_NAME}" \
-                        --version "0.0.${BUILD_NUMBER}" \
-                        -i '{"devices":["'"${EDGE_DEVICE_ID}"'"]}'
-                    '''
-                }
-
-                stage('Cleanup Docker') {
-                    sh """
-                    docker ps -a | grep docker:24-dind | awk \'{print \$1}\' | xargs -r docker rm -f
-                    docker system prune -af || true
-                    docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi || true
-                    """
-                }
-    }        
- }
+ */

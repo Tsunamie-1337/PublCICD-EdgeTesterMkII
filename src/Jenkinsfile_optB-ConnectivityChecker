@@ -1,7 +1,7 @@
 node {
 
     //Set Absolute Path to src files here
-    env.PROJECT_PATH_PREFIX="src/optB-Docker-inJenkins"
+    env.PROJECT_PATH_PREFIX="src"
 
     checkout scm
     withEnv(['HOME=.']) {          
