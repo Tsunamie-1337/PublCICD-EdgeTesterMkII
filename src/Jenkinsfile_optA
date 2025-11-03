@@ -11,6 +11,89 @@ checkout scm
                 
                 stage('Upload to IEM and deploy on Device') {
                     sh '''
+                    #set environment variables for iectl
+                    export IE_SKIP_CERTIFICATE=true
+                    export EDGE_SKIP_TLS=1
+
+                    echo "---------------------------Creating publisher configuration---------------------------"
+                    iectl config add publisher \
+                        --name "publisherdev" \
+                        --dockerurl "http://127.0.0.1:2375" \
+                        --workspace "./workspace"
+
+                    echo "---------------------------Initializing workspace---------------------------"
+                    # create empty folder
+                    iectl publisher workspace init
+                    tree
+                    pwd
+                    ls -l src/appicon/
+                    ls -ld src/appicon/icon.png
+
+                    #iectl publisher standalone-app create \
+                    #            --reponame "cicd-test-v2" \
+                    #           --appdescription "EEEE"  \
+                    #           --iconpath "src/appicon/icon.png" \
+                    #           --appname "${APP_NAME}V2"
+
+                    iectl publisher standalone-app version create \
+                        --appname "${APP_NAME}" \
+                        --changelogs "initial release" \
+                        --yamlpath "src/app/docker-compose.prod.yml" \
+                        --versionnumber "0.0.${BUILD_NUMBER}" \
+                        -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
+                        -s "hello-edge" \
+                        -t "FromBoxReverseProxy" \
+                        -u "hello-edge" \
+                        -r "/"
+
+                    echo "----- IEM Login ------"
+                    iectl config add iem \
+                        --name 'iemdev' \
+                        --url "${IEM_URL}" \
+                        --user "${USER_NAME}" \
+                        --password "${PSWD}"
+
+                    echo "----- Deploy on edge device ------"
+                    iectl iem app-project install \
+                        -a "${APP_NAME}V2" \
+                       --version "0.0.${BUILD_NUMBER}" \
+                       -i '{"devices":["'"${EDGE_DEVICE_ID}"'"]}'
+                    '''
+                }
+
+                stage('Cleanup Docker') {
+                    sh """
+                    docker ps -a | grep docker:24-dind | awk \'{print \$1}\' | xargs -r docker rm -f
+                    docker system prune -af || true
+                    docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi || true
+                    """
+                }
+    }        
+ }
+
+ /*
+                    # A flag for bash scripts to exit on error
+                    set -e
+
+                    rm -rf workspace
+                    mkdir workspace
+                    tree
+                    cd workspace
+                    ls -la
+                    ie-app-publisher-linux ws init
+                    cd ..
+                    cp -RT src/app ./workspace
+                    cd workspace
+                    ie-app-publisher-linux de c -u http://localhost:2375
+                    export IE_SKIP_CERTIFICATE=true
+                    ie-app-publisher-linux em li -u "$IEM_URL" -e $USER_NAME -p $PSWD
+                    ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
+                    ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
+ */
+
+
+
+ /*
                     # A flag for bash scripts to exit on error
                     set -e
 
@@ -48,87 +131,4 @@ checkout scm
                         -a "${APP_NAME}" \
                         --version "0.0.${BUILD_NUMBER}" \
                         -i '{"devices":["'"${EDGE_DEVICE_ID}"'"]}'
-                    '''
-                }
-
-                stage('Cleanup Docker') {
-                    sh """
-                    docker ps -a | grep docker:24-dind | awk \'{print \$1}\' | xargs -r docker rm -f
-                    docker system prune -af || true
-                    docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi || true
-                    """
-                }
-    }        
- }
-
- /*
-                    # A flag for bash scripts to exit on error
-                    set -e
-
-                    rm -rf workspace
-                    mkdir workspace
-                    tree
-                    cd workspace
-                    ls -la
-                    ie-app-publisher-linux ws init
-                    cd ..
-                    cp -RT src/app ./workspace
-                    cd workspace
-                    ie-app-publisher-linux de c -u http://localhost:2375
-                    export IE_SKIP_CERTIFICATE=true
-                    ie-app-publisher-linux em li -u "$IEM_URL" -e $USER_NAME -p $PSWD
-                    ie-app-publisher-linux em app cuv -a $APP_ID -v 0.0.$BUILD_NUMBER -y ./docker-compose.prod.yml -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' -s 'hello-edge' -t 'FromBoxReverseProxy' -u "hello-edge" -r "/"
-                    ie-app-publisher-linux em app uuv -a $APP_ID -v 0.0.$BUILD_NUMBER
- */
-
-
-
- /*
-                    #set environment variables for iectl
-                    export IE_SKIP_CERTIFICATE=true
-                    export EDGE_SKIP_TLS=1
-
-                    echo "---------------------------Creating publisher configuration---------------------------"
-                    iectl config add publisher \
-                        --name "publisherdev" \
-                        --dockerurl "http://127.0.0.1:2375" \
-                        --workspace "./workspace"
-
-                    echo "---------------------------Initializing workspace---------------------------"
-                    # create empty folder
-                    iectl publisher workspace init
-                    tree
-                    pwd
-                    ls -l src/appicon/
-                    ls -ld src/appicon/icon.png
-
-                    iectl publisher standalone-app create \
-                                --reponame "cicd-test-v2" \
-                                --appdescription "EEEE"  \
-                                --iconpath "src/appicon/icon.png" \
-                                --appname "${APP_NAME}V2"
-
-                    iectl publisher standalone-app version create \
-                        --appname "${APP_NAME}V2" \
-                        --changelogs "initial release" \
-                        --yamlpath "src/app/docker-compose.prod.yml" \
-                        --versionnumber "0.0.${BUILD_NUMBER}" \
-                        -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
-                        -s "hello-edge" \
-                        -t "FromBoxReverseProxy" \
-                        -u "hello-edge" \
-                        -r "/"
-
-                    echo "----- IEM Login ------"
-                    iectl config add iem \
-                        --name 'iemdev' \
-                        --url "${IEM_URL}" \
-                        --user "${USER_NAME}" \
-                        --password "${PSWD}"
-
-                    echo "----- Deploy on edge device ------"
-                    iectl iem app-project install \
-                        -a "${APP_NAME}V2" \
-                       --version "0.0.${BUILD_NUMBER}" \
-                       -i '{"devices":["'"${EDGE_DEVICE_ID}"'"]}'
  */
