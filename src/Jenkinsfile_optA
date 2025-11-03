@@ -23,8 +23,8 @@ checkout scm
 
                     echo "---------------------------Initializing workspace---------------------------"
                     # create empty folder
-                    #rm -rf workspace
-                    #mkdir workspace
+                    rm -rf workspace
+                    mkdir workspace
                     cd workspace
                     iectl publisher workspace init
                     tree
