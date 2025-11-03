@@ -6,11 +6,13 @@ checkout scm
                     sh """
                         cd src/app
                         docker-compose build
+                        pwd
                     """
                 }
                 
                 stage('Upload to IEM and deploy on Device') {
                     sh '''
+                    pwd
                     #set environment variables for iectl
                     export IE_SKIP_CERTIFICATE=true
                     export EDGE_SKIP_TLS=1
