@@ -29,3 +29,6 @@ Enable the docker pipeline Plugin
 ### 3.
 
 Switch the selceted Jenkinsfile in the configuration of the Jenkins Pipeline
+
+cd /var/lib/jenkins/workspace/Jankis
+sudo rm -rf * .[!.]* ..?*

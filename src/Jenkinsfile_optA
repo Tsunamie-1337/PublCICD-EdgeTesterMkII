@@ -14,7 +14,7 @@ checkout scm
                     set -e
 
                     echo "----- Set publisher configuration ------"
-                    iectl config add publisher --name "publisher" --dockerurl "http://127.0.0.1:2375" --workspace "./workspace"
+                    iectl config add publisher --name "publisher" --dockerurl "http://docker:2375" --workspace "./workspace"
 
                     echo "----- Prepare workspace ------"
                     iectl publisher workspace init
@@ -28,8 +28,6 @@ checkout scm
                         --url "${IEM_URL}" \
                         --user "${USER_NAME}" \
                         --password "${PSWD}"
-
-#iectl publisher docker-engine verify
 
                     echo "----- Create new app version ------"
                     # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details"
@@ -50,7 +48,8 @@ checkout scm
                         --version "0.0.${BUILD_NUMBER}" \
                         -i '{"devices":["'"${EDGE_DEVICE_ID}"'"]}'
 
-                        #iectl iem app-project version delete --app-id "${APP_ID}" --version-number "0.0.${BUILD_NUMBER}"
+                    #echo "----- Delete Specific App Versions ------"
+                    #iectl iem app-project version delete --app-id "${APP_ID}" --version-number "0.0.${BUILD_NUMBER}"
                     '''
                 }
 

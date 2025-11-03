@@ -44,21 +44,18 @@ node {
                     # A flag for bash scripts to exit on error
                     set -e
 
-                    echo "----- Set publisher configuration ------"
-                    iectl config add publisher --name "publisher-dind" --dockerurl "http://docker:2375" --workspace "./workspace"
-
                     echo "----- Prepare workspace ------"
-                    iectl publisher workspace init
+                    mkdir -p /app/src/workspace # TODO moved to dockerfile for the docker registry remove later TODO needs to be recompiled and uploaded for that
+                    cp -RT src/app /app/src/workspace
+                    cd /app/src/workspace
+
+                    echo "----- Set publisher configuration ------"
+                    iectl config add publisher --name "publisher-dind" --dockerurl "http://docker:2375" --workspace "."
 
                     echo "----- IEM Login ------"
                     export IE_SKIP_CERTIFICATE=true
                     export EDGE_SKIP_TLS=1
-
-                    iectl config add iem \
-                        --name 'iemdev' \
-                        --url "${IEM_URL}" \
-                        --user "${USER_NAME}" \
-                        --password "${PSWD}"
+                    iectl config add iem --name 'iemdev' --url "${IEM_URL}" --user "${USER_NAME}" --password "${PSWD}"
 
                     echo "----- Create new app version ------"
                     # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details"
@@ -66,7 +63,7 @@ node {
                     iectl publisher app-project version create \
                         -a "${APP_ID}" \
                         -v "0.0.${BUILD_NUMBER}" \
-                        -y "./src/app/docker-compose.prod.yml" \
+                        -y ./docker-compose.prod.yml \
                         -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
                         -s 'hello-edge' \
                         -t 'FromBoxReverseProxy' \
