@@ -39,7 +39,6 @@ ls -l src/appicon/
 
 ls -ld src/appicon/icon.png
 
-cd workspace
 
                     iectl publisher standalone-app create \
                                 --reponame "cicd-test" \
