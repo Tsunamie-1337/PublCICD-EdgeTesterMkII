@@ -29,6 +29,8 @@ checkout scm
                         --user "${USER_NAME}" \
                         --password "${PSWD}"
 
+iectl publisher docker-engine verify
+
                     echo "----- Create new app version ------"
                     # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details"
                     # This line can be used as an example to get last app version: OLD_VERSION=$(iectl iem app-project app-details --project-name "XXX" --app-name "XXX" | jq -r '.versions[0].versionNumber // "0.0.0"') 
