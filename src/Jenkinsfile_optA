@@ -1,8 +1,5 @@
 node {
 
-//Set Absolute Path to src files here
-env.PROJECT_PATH_PREFIX="/home/tsunamie/Projects/JenkinsCICD-Demo/PublCICD-EdgeTesterMkII"
-
 checkout scm
     withEnv(['HOME=.']) {          
                 stage ('Build') {
@@ -22,7 +19,7 @@ checkout scm
                     iectl config add publisher \
                         --name "publisherdev" \
                         --dockerurl "http://127.0.0.1:2375" \
-                        --workspace "$PROJECT_PATH_PREFIX/workspace"
+                        --workspace "./workspace"
 
                     echo "---------------------------Initializing workspace---------------------------"
                     # create empty folder
@@ -30,6 +27,8 @@ checkout scm
                     #mkdir workspace
                     cd workspace
                     iectl publisher workspace init
+                    tree
+                    pwd
 
 
 pwd
@@ -44,13 +43,13 @@ cd workspace
                     iectl publisher standalone-app create \
                                 --reponame "cicd-test" \
                                 --appdescription "EEEE"  \
-                                --iconpath "$PROJECT_PATH_PREFIX/src/appicon/icon.png" \
+                                --iconpath "src/appicon/icon.png" \
                                 --appname $APP_NAME
 
                     iectl publisher standalone-app version create \
                         --appname "${APP_NAME}" \
                         --changelogs "initial release" \
-                        --yamlpath "$PROJECT_PATH_PREFIX/src/app/docker-compose.prod.yml" \
+                        --yamlpath "src/app/docker-compose.prod.yml" \
                         --versionnumber "0.0.${BUILD_NUMBER}" \
                         -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
                         -s "hello-edge" \
