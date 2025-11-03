@@ -2,8 +2,9 @@ version: '2.4'
 services:
   hello-edge:
     image: hello-edge
-    build:
-      context: ./web
+    build: .
+    ports:
+      - '1234:80'
     mem_limit: 200mb
     restart: always
     volumes:
