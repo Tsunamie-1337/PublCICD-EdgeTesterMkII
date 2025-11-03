@@ -7,7 +7,6 @@ checkout scm
     withEnv(['HOME=.']) {          
                 stage ('Build') {
                     sh """
-                    tree
                         cd src/app
                         docker-compose build
                     """
@@ -26,6 +25,9 @@ checkout scm
                         --workspace "$PROJECT_PATH_PREFIX/workspace"
 
                     echo "---------------------------Initializing workspace---------------------------"
+                    # create empty folder
+                    rm -rf workspace
+                    mkdir workspace
                     cd workspace
                     iectl publisher workspace init
                     
