@@ -16,7 +16,7 @@ checkout scm
                     set -e
 
                     echo "----- Set publisher configuration ------"
-                    iectl config add publisher --name "publisher" --dockerurl "http://docker:2375" --workspace "."
+                    iectl config add publisher --name "publisher" --dockerurl "http://docker:2375" --workspace "./workspace"
 
                     echo "----- Prepare workspace ------"
                     iectl publisher workspace init
