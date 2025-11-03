@@ -32,7 +32,7 @@ checkout scm
                     ls -ld src/appicon/icon.png
 
                     iectl publisher standalone-app create \
-                                --reponame "cicd-test" \
+                                --reponame "cicd-test-v2" \
                                 --appdescription "EEEE"  \
                                 --iconpath "src/appicon/icon.png" \
                                 --appname "${APP_NAME}V2"
