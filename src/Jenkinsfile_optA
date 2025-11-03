@@ -29,6 +29,13 @@ checkout scm
                     cd workspace
                     iectl publisher workspace init
 
+                    iectl publisher standalone-app create \
+                                --reponame $APP_REPO \
+                                --appdescription "EEEE"  \
+                                --iconpath "$PROJECT_PATH_PREFIX/appicon/icon.png" \
+                                --appname $APP_NAME
+                    
+
                     iectl publisher standalone-app version create \
                         --appname "${APP_NAME}" \
                         --changelogs "initial release" \
