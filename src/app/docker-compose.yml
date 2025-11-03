@@ -1,7 +1,7 @@
 version: '2.4'
 services:
   hello-edge:
-    image: nginx:alpine
+    image: hello-edge
     build: .
     ports:
       - '1234:80'
