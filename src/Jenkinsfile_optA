@@ -28,7 +28,7 @@ checkout scm
                     echo "---------------------------Initializing workspace---------------------------"
                     cd workspace
                     iectl publisher workspace init
-
+                    tree
                     iectl publisher standalone-app create \
                                 --reponame "cicd-test" \
                                 --appdescription "EEEE"  \
