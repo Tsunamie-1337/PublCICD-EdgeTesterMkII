@@ -36,79 +36,59 @@ node {
                         export DOCKER_HOST=tcp://docker:2375
                         docker-compose build
                         docker images
-                    """
-                }
-                
-               stage('Upload to IEM and deploy on Device') {
+                        """
+                    }
+                    
+                stage('Upload to IEM and deploy on Device') {
                     sh '''
-                    # A flag for bash scripts to exit on error
-                    set -e
+                        # A flag for bash scripts to exit on error
+                        set -e
 
-                    echo "----- Set publisher configuration ------"
-                    iectl config add publisher --name "publisher-dind" --dockerurl "http://docker:2375" --workspace "./workspace"
+                        echo "--------------- Set publisher configuration ----------------"
+                        iectl config add publisher --name "publisher-dind" --dockerurl "http://docker:2375" --workspace "./workspace"
 
-                    echo "----- Prepare workspace ------"
-                    iectl publisher workspace init
+                        echo "--------------- Prepare workspace ----------------"
+                        iectl publisher workspace init
 
-                    echo "----- IEM Login ------"
-                    export IE_SKIP_CERTIFICATE=true
-                    export EDGE_SKIP_TLS=1
+                        echo "--------------- IEM Login ----------------"
+                        export IE_SKIP_CERTIFICATE=true
+                        export EDGE_SKIP_TLS=1
 
-                    iectl config add iem \
-                        --name 'iemdev' \
-                        --url "${IEM_URL}" \
-                        --user "${USER_NAME}" \
-                        --password "${PSWD}"
+                        iectl config add iem \
+                            --name 'iemdev' \
+                            --url "${IEM_URL}" \
+                            --user "${USER_NAME}" \
+                            --password "${PSWD}"
 
-                    echo "----- Create new app version ------"
-                    # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details"
-                    # This line can be used as an example to get last app version: OLD_VERSION=$(iectl iem app-project app-details --project-name "XXX" --app-name "XXX" | jq -r '.versions[0].versionNumber // "0.0.0"') 
-                    iectl publisher app-project version create \
-                        -a "${APP_ID}" \
-                        -v "0.0.${BUILD_NUMBER}" \
-                        -y "./src/app/docker-compose.prod.yml" \
-                        -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
-                        -s 'hello-edge' \
-                        -t 'FromBoxReverseProxy' \
-                        -u 'hello-edge' \
-                        -r '/'
+                        echo "--------------- Create new app version ----------------"
+                        # I have used BUILD_NUMBER from Jenkins to create versions. If the apps are being deployed differentley as well you would need to get the version via "app-details"
+                        # This line can be used as an example to get last app version: OLD_VERSION=$(iectl iem app-project app-details --project-name "XXX" --app-name "XXX" | jq -r '.versions[0].versionNumber // "0.0.0"') 
+                        iectl publisher app-project version create \
+                            -a "${APP_ID}" \
+                            -v "0.0.${BUILD_NUMBER}" \
+                            -y "./src/app/docker-compose.prod.yml" \
+                            -n '{"hello-edge":[{"name":"hello-edge","protocol":"HTTP","port":"80","headers":"","rewriteTarget":"/"}]}' \
+                            -s 'hello-edge' \
+                            -t 'FromBoxReverseProxy' \
+                            -u 'hello-edge' \
+                            -r '/'
 
-                    echo "----- Deploy on edge device ------"
-                    iectl iem app-project install \
-                        -a "${APP_NAME}" \
-                        --version "0.0.${BUILD_NUMBER}" \
-                        -i '{"devices":["'"${EDGE_DEVICE_ID}"'"]}'
-                    '''
+                        echo "--------------- Deploy on edge device ----------------"
+                        iectl iem app-project install \
+                            -a "${APP_NAME}" \
+                            --version "0.0.${BUILD_NUMBER}" \
+                            -i '{"devices":["'"${EDGE_DEVICE_ID}"'"]}'
+                        '''
                 }
 
                 stage('Cleanup Docker') {
                     sh """
-                    docker ps -a | grep docker:24-dind | awk \'{print \$1}\' | xargs -r docker rm -f
-                    docker system prune -af || true
-                    docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi || true
-                    """
+                        docker ps -a | grep docker:24-dind | awk \'{print \$1}\' | xargs -r docker rm -f
+                        docker system prune -af || true
+                        docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi || true
+                        """
                 }
             }        
         }
     }
 }
-
-/*
- 
-
-Current Situation: The Docker registry still had code with ie-publisher elements. I commented the lines out in the dockerfile from the dockerfile folder. I published it on tsunamie1337/cicd-pipeline-mk2:tester and set the variable in jenkins
-
-If i cd before the publisher ws init i get the erro that the folder would be apparently not empty Workspace /app/src/workspace is not valid. Please provide path of an empty folder.
-
-I need to figure out where te error invalid docker compose file comes from or try again to upload with ehe example below
-
-cd /var/lib/jenkins/workspace/Jankis
-sudo rm -rf * .[!.]* ..?*
-
-
-
-
-https://github.com/industrial-edge/upload-app-to-iem-with-iectl/blob/master/src/script.sh
-
-
-*/
