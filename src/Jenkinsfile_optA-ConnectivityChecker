@@ -3,7 +3,7 @@ checkout scm
     withEnv(['HOME=.']) {          
         stage ('Build') {
             sh """
-                cd src/app
+                cd src/app-connchecker
                 docker-compose build
                 """
             }
