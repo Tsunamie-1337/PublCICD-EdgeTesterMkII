@@ -1,6 +1,5 @@
 node {
 checkout scm
-def previousBuildNumber = currentBuildNumber - 1
     withEnv(['HOME=.']) {          
         stage ('Build') {
             sh """
@@ -49,10 +48,10 @@ def previousBuildNumber = currentBuildNumber - 1
                     --version "0.0.${BUILD_NUMBER}" \
                     -i '{"devices":["'"${EDGE_DEVICE_ID}"'"]}'
 
-                echo "---------------- Delete Specific App Versions -----------------"
-                iectl iem app-project version delete \
-                    --app-id "${APP_ID}" \
-                    --version-number "0.0.${previousBuildNumber}"
+                #echo "---------------- Delete Specific App Versions -----------------"
+                #iectl iem app-project version delete \
+                #    --app-id "${APP_ID}" \
+                #    --version-number "0.0.XXX"
                 '''
         }
 
