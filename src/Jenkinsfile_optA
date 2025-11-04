@@ -49,10 +49,10 @@ checkout scm
                     -i '{"devices":["'"${EDGE_DEVICE_ID}"'"]}'
 
                 echo "---------------- Delete Specific App Versions -----------------"
-                iectl iem app-project version delete \
-                    --app-id "${APP_ID}" \
-                    --version-number "0.0.212"
-                    #--version-number "0.0.${BUILD_NUMBER}" 
+                iectl publisher standalone-app version delete \
+                    -a "${APP_NAME}" \
+                    --versionnumber "0.0.212"
+                    #--versionnumber "0.0.${BUILD_NUMBER}" 
                 
                 '''
         }
