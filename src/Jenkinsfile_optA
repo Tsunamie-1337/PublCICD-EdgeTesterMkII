@@ -51,9 +51,8 @@ checkout scm
                 echo "---------------- Delete Specific App Versions -----------------"
                 iectl iem app-project version delete \
                     --app-id "${APP_ID}" \
-                    --version-number \
-                    --"0.0.212"
-                    #--"0.0.${BUILD_NUMBER}" 
+                    --version-number "0.0.212"
+                    #--version-number "0.0.${BUILD_NUMBER}" 
                 
                 '''
         }
