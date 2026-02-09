@@ -4,6 +4,11 @@ services:
     image: hello-edge
     mem_limit: 200mb
     restart: always
+    networks:
+      - reverse-proxy
     volumes:
       - './publish/:/publish/'
       - './cfg-data/:/cfg-data/'
+networks:
+  reverse-proxy:
+    name: reverse-proxy
