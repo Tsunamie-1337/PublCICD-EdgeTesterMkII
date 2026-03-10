@@ -5,10 +5,11 @@ services:
     mem_limit: 200mb
     restart: always
     networks:
-      - reverse-proxy
+      - proxy-redirect
     volumes:
       - './publish/:/publish/'
       - './cfg-data/:/cfg-data/'
 networks:
-  reverse-proxy:
-    name: reverse-proxy
+ proxy-redirect:
+    external: true
+    name: proxy-redirect
